@@ -1,0 +1,6 @@
+context_path: cassava.run.ProjectContext
+project_name: "cassava"
+project_version: "0.16.6"
+package_name: "cassava"
+hooks:
+  - cassava.hooks.project_hooks

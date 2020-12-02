@@ -1,0 +1,19 @@
+train:
+  type: pandas.CSVDataSet
+  filepath: data/01_raw/train.csv
+
+label_num_to_disease_map:
+  type: pandas.JSONDataSet
+  filepath: data/01_raw/label_num_to_disease_map.json
+  load_args:
+    orient: "index"
+  
+train_images:
+  type: PartitionedDataSet
+  dataset: kedro.extras.datasets.pillow.ImageDataSet
+  path: data/01_raw/train_images
+  filename_suffix: ".jpg"
+
+train_images_torch:
+  type: cassava.extras.datasets.image_dataset.ImageFolderDataSet
+  filepath: data/03_primary/train_images
