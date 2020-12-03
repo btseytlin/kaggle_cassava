@@ -3,9 +3,9 @@ from typing import Any, Dict
 import pandas as pd
 import os
 
-def make_image_folder(train, train_images):
+def make_image_folder(train_labels, train_images):
     image_folder_dir = os.path.join('data', '03_primary', 'train_images')
-    for ix, row in train.iterrows():
+    for ix, row in train_labels.iterrows():
         label = str(row.label)
         image_id = row.image_id
 

@@ -1,4 +1,4 @@
-train:
+train_labels:
   type: pandas.CSVDataSet
   filepath: data/01_raw/train.csv
 
@@ -17,3 +17,12 @@ train_images:
 train_images_torch:
   type: cassava.extras.datasets.image_dataset.ImageFolderDataSet
   filepath: data/03_primary/train_images
+
+model:
+  type: cassava.extras.datasets.torch_model.TorchLocalModel
+  filepath: data/06_models/model.pt
+  model: Resnet
+
+metrics_history:
+  type: kedro.extras.datasets.pickle.PickleDataSet
+  filepath: data/08_reporting/metrics.pkl
