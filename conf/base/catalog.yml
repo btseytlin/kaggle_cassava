@@ -2,6 +2,10 @@ train_labels:
   type: pandas.CSVDataSet
   filepath: data/01_raw/train.csv
 
+sample_submission:
+  type: pandas.CSVDataSet
+  filepath: data/01_raw/sample_submission.csv
+
 label_num_to_disease_map:
   type: pandas.JSONDataSet
   filepath: data/01_raw/label_num_to_disease_map.json
@@ -20,6 +24,12 @@ train_images_torch:
   labels_path: train.csv
   images_path: train_images
 
+test_images_torch:
+  type: cassava.extras.datasets.image_dataset.ImageFolderDataSet
+  filepath: data/01_raw
+  labels_path: sample_submission.csv
+  images_path: test_images
+
 model:
   type: cassava.extras.datasets.torch_model.TorchLocalModel
   filepath: data/06_models/model.pt
@@ -32,3 +42,7 @@ train_metrics:
 val_scores:
   type: kedro.extras.datasets.pickle.PickleDataSet
   filepath: data/08_reporting/val_scores.pkl
+
+submission:
+  type: pandas.CSVDataSet
+  filepath: data/07_model_output/submission.csv

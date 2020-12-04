@@ -70,8 +70,8 @@ def train_model(train_images_torch, train_indices, val_indices, parameters):
     model = ResnetModel()
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=parameters['learning_rate'])
-    lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=3, verbose=True)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=parameters['learning_rate'])
+    lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=parameters['reduce_lr_on_pleteau_patience'], verbose=True)
 
     model = model.to(parameters['device'])
     criterion = criterion.to(parameters['device'])

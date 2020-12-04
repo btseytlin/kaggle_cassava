@@ -22,7 +22,6 @@ def get_test_transforms():
         A.Resize(256, 256),
         A.CenterCrop(227, 227),
         A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        A.ToFloat(max_value=1.0),
         ToTensorV2(),
     ])
 
