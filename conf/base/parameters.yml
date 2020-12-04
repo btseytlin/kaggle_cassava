@@ -5,7 +5,8 @@ validation_size: 0.2
 
 batch_size: 10
 train_epochs: 20
-learning_rate: 0.01
+learning_rate: 0.001
+weight_decay: 0.0001
 early_stop_patience: 4
 reduce_lr_on_pleteau_patience: 3
 batches_per_epoch: 999999999

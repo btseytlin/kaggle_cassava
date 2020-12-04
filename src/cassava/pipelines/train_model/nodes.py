@@ -33,7 +33,7 @@ def score_model(model, train_images_torch, indices, parameters):
 
     dataset = DatasetFromSubset(torch.utils.data.Subset(train_images_torch, indices=indices),
                       transform=get_test_transforms())
-    loader = torch.utils.data.DataLoader(dataset, batch_size=parameters['batch_size'])
+    loader = torch.utils.data.DataLoader(dataset, num_workers=8, batch_size=parameters['batch_size'])
 
     predictions = []
     true_labels = []
@@ -62,15 +62,15 @@ def train_model(train_images_torch, train_indices, val_indices, parameters):
 
     train_data_loader = torch.utils.data.DataLoader(train_dataset,
                                                     batch_size=parameters['batch_size'],
-                                                    num_workers=4,
+                                                    num_workers=8,
                                                     shuffle=True)
 
-    val_data_loader = torch.utils.data.DataLoader(val_dataset, batch_size=parameters['batch_size'])
+    val_data_loader = torch.utils.data.DataLoader(val_dataset, num_workers=8, batch_size=parameters['batch_size'])
 
     model = ResnetModel()
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.AdamW(model.parameters(), lr=parameters['learning_rate'])
+    optimizer = torch.optim.AdamW(model.parameters(), lr=parameters['learning_rate'], weight_decay=parameters['weight_decay'])
     lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=parameters['reduce_lr_on_pleteau_patience'], verbose=True)
 
     model = model.to(parameters['device'])
