@@ -17,3 +17,4 @@ scikit-image
 seaborn
 tqdm
 umap-learn
+albumentations

@@ -6,7 +6,6 @@ from kedro.io import DataCatalog
 from kedro.pipeline import Pipeline
 from kedro.versioning import Journal
 
-from cassava.pipelines import prepare_data
 from cassava.pipelines import train_model
 
 
@@ -19,11 +18,9 @@ class ProjectHooks:
             A mapping from a pipeline name to a ``Pipeline`` object.
 
         """
-        prepare_data_pipeline = prepare_data.create_pipeline()
         train_pipeline_pipeline = train_model.create_pipeline()
 
         return {
-            "prep": prepare_data_pipeline,
             "train": train_pipeline_pipeline,
             "__default__": train_pipeline_pipeline,
         }

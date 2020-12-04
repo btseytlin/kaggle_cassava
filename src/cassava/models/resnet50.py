@@ -17,7 +17,7 @@ class ResnetModel(nn.Module):
 
     def predict(self, x):
         logits = self.forward(x)
-        probabilities = nn.functional.softmax(logits)
+        probabilities = nn.functional.softmax(logits, dim=0)
         return probabilities
 
     def predict_label(self, x):

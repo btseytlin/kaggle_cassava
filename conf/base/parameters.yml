@@ -4,6 +4,7 @@ seed: 42
 validation_size: 0.2
 
 batch_size: 10
-train_epochs: 5
+train_epochs: 3
 learning_rate: 0.01
 early_stop_patience: 5
+batches_per_epoch: 10

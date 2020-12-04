@@ -2,6 +2,7 @@ import logging
 
 import numpy as np
 import pandas as pd
+from sklearn.metrics import accuracy_score, f1_score, confusion_matrix
 
 from sklearn.model_selection import train_test_split
 import torch
@@ -11,24 +12,9 @@ from tqdm import tqdm
 
 from cassava.models.resnet50 import ResnetModel
 
+from cassava.transforms import get_train_transforms, get_test_transforms
 
-class Model(nn.Module):
-    def __init__(self, trunk, head):
-        super(Model, self).__init__()
-        self.trunk = trunk
-        self.trunk.fc = head
-        self.head = self.trunk.fc
-
-    def forward(self, x):
-        return self.trunk.forward(x)
-
-    def predict(self, x):
-        logits = self.forward(x)
-        probabilities = nn.functional.softmax(logits)
-        return probabilities
-
-    def predict_label(self, x):
-        return torch.max(self.predict(x), 1)[1]
+from src.cassava.extras.datasets.image_dataset import DatasetFromSubset
 
 
 def split_data(train_labels, parameters):
@@ -40,27 +26,39 @@ def split_data(train_labels, parameters):
     return train_indices, val_indices
 
 
+def score_model(model, train_images_torch, indices, parameters):
+    logging.debug('Scoring model')
+
+    device = parameters['device']
+
+    dataset = torch.utils.data.Subset(train_images_torch, indices=indices)
+    dataset.transform = get_test_transforms()
+    loader = torch.utils.data.DataLoader(dataset, batch_size=parameters['batch_size'])
+
+    predictions = []
+    true_labels = []
+    model.eval()
+    model = model.to(device)
+    for images, labels in tqdm(loader):
+        batch_preds = model.predict_label(images.to(device))
+        predictions += batch_preds.tolist()
+        true_labels += labels.tolist()
+
+    return {
+        'accuracy': accuracy_score(predictions, true_labels),
+        'confusion_matrix': confusion_matrix(predictions, true_labels),
+        'f1_score': f1_score(predictions, true_labels, average='weighted'),
+    }
+
+
 def train_model(train_images_torch, train_indices, val_indices, parameters):
-    train_transform = transforms.Compose([
-        transforms.Resize(256),
-        transforms.RandomResizedCrop(227, scale=(0.16, 1), ratio=(0.75, 1.33)),
-        transforms.RandomHorizontalFlip(0.5),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-    ])
+    train_transform, val_transform = get_train_transforms(), get_test_transforms()
 
-    val_transform = transforms.Compose([
-        transforms.Resize(256),
-        transforms.CenterCrop(227),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-    ])
+    train_dataset = DatasetFromSubset(torch.utils.data.Subset(train_images_torch, indices=train_indices),
+                                      transform=train_transform)
 
-    train_dataset = torch.utils.data.Subset(train_images_torch, indices=train_indices)
-    train_dataset.transform = train_transform
-
-    val_dataset = torch.utils.data.Subset(train_images_torch, indices=val_indices)
-    val_dataset.transform = val_transform
+    val_dataset = DatasetFromSubset(torch.utils.data.Subset(train_images_torch, indices=val_indices),
+                                    transform=val_transform)
 
     train_data_loader = torch.utils.data.DataLoader(train_dataset,
                                                     batch_size=parameters['batch_size'],
@@ -73,7 +71,7 @@ def train_model(train_images_torch, train_indices, val_indices, parameters):
 
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=parameters['learning_rate'])
-    lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, verbose=True)
+    lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=3, verbose=True)
 
     model = model.to(parameters['device'])
     criterion = criterion.to(parameters['device'])
@@ -99,6 +97,8 @@ def train_model(train_images_torch, train_indices, val_indices, parameters):
 
         pbar = tqdm(enumerate(train_data_loader), total=len(train_data_loader))
         for i, batch in pbar:
+            if i > parameters['batches_per_epoch']:
+                break
             inputs, labels = batch
             inputs = inputs.to(parameters['device'])
             labels = labels.to(parameters['device'])
@@ -114,7 +114,10 @@ def train_model(train_images_torch, train_indices, val_indices, parameters):
             epoch_train_losses.append(loss.item())
             pbar.set_postfix({'batch loss': round(loss.item(), 4)})
 
+        model.eval()
         for i, batch in tqdm(enumerate(val_data_loader), total=len(val_data_loader)):
+            if i > parameters['batches_per_epoch']:
+                break
             with torch.no_grad():
                 inputs, labels = batch
                 inputs = inputs.to(parameters['device'])
@@ -167,3 +170,4 @@ def train_model(train_images_torch, train_indices, val_indices, parameters):
     }
 
     return model, metrics
+
