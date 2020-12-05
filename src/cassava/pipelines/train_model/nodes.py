@@ -1,4 +1,6 @@
 import logging
+from matplotlib import pyplot as plt
+import seaborn as sns
 
 import numpy as np
 import pandas as pd
@@ -8,7 +10,7 @@ from sklearn.model_selection import train_test_split
 import torch
 from torch import nn
 from torchvision import transforms
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from cassava.models.resnet50 import ResnetModel
 
@@ -44,11 +46,14 @@ def score_model(model, train_images_torch, indices, parameters):
         predictions += batch_preds.tolist()
         true_labels += labels.tolist()
 
-    return {
+    scores = {
         'accuracy': accuracy_score(predictions, true_labels),
         'confusion_matrix': confusion_matrix(predictions, true_labels),
         'f1_score': f1_score(predictions, true_labels, average='weighted'),
     }
+
+    logging.info(f'Validation scores:\n{scores}')
+    return scores
 
 
 def train_model(train_images_torch, train_indices, val_indices, parameters):
@@ -171,3 +176,21 @@ def train_model(train_images_torch, train_indices, val_indices, parameters):
 
     return model, metrics
 
+
+def report_on_training(train_metrics):
+    plt.figure(figsize=(10, 7))
+    sns.lineplot(x=range(len(train_metrics['train_losses'])), y=train_metrics['train_losses'], label='Training loss')
+    plt.title('Training loss')
+    plt.legend()
+    plt.show()
+
+    plt.figure(figsize=(10, 7))
+    sns.lineplot(x=range(len(train_metrics['validation_losses'])), y=train_metrics['validation_losses'], label='Validation loss')
+    plt.legend()
+    plt.show()
+
+    plt.figure(figsize=(10, 7))
+    sns.lineplot(x=range(len(train_metrics['train_epoch_losses'])), y=train_metrics['train_epoch_losses'], label='Training loss per epoch')
+    sns.lineplot(x=range(len(train_metrics['validation_epoch_losses'])), y=train_metrics['validation_epoch_losses'], label='Validation loss per epoch')
+    plt.legend()
+    plt.show()
