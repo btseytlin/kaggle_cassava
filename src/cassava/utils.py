@@ -1,5 +1,8 @@
 import numpy as np
 import pandas as pd
+import os
+from skimage import io
+from torch.utils.data import Dataset
 import torch
 from matplotlib import pyplot as plt
 from mpl_toolkits.axes_grid1 import ImageGrid
@@ -60,3 +63,40 @@ def plot_label_examples(dataset, targets, target_label):
         plot_image(img, ax=ax)
     plt.suptitle(f'Label {target_label}')
     plt.show()
+
+
+class DatasetFromSubset(Dataset):
+    def __init__(self, subset, transform=None):
+        self.subset = subset
+        self.transform = transform
+
+    def __getitem__(self, index):
+        x, y = self.subset[index]
+        if self.transform:
+            x = self.transform(image=x)['image']
+        return x, y
+
+    def __len__(self):
+        return len(self.subset)
+
+
+class CassavaDataset(Dataset):
+    def __init__(self, root, image_ids, labels, transform=None):
+        super().__init__()
+        self.root = root
+        self.image_ids = image_ids
+        self.labels = labels
+        self.targets = self.labels
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.image_ids)
+
+    def __getitem__(self, idx):
+        label = self.labels[idx]
+        img = io.imread(os.path.join(self.root, self.image_ids[idx]))
+
+        if self.transform:
+            img = self.transform(image=img)['image']
+
+        return img, label

@@ -1,11 +1,12 @@
 import torch
 from torch import nn
+import torchvision.models as models
 
 
 class ResnetModel(nn.Module):
     def __init__(self):
         super().__init__()
-        trunk = torch.hub.load('pytorch/vision:v0.6.0', 'resnet18', pretrained=True)
+        trunk = models.resnet18(pretrained=True)
         head = nn.Linear(trunk.fc.in_features, 5)
 
         self.trunk = trunk

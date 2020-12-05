@@ -14,7 +14,7 @@ from cassava.models.resnet50 import ResnetModel
 
 from cassava.transforms import get_train_transforms, get_test_transforms
 
-from cassava.extras.datasets.image_dataset import DatasetFromSubset
+from cassava.utils import DatasetFromSubset
 
 
 def split_data(train_labels, parameters):
@@ -33,7 +33,7 @@ def score_model(model, train_images_torch, indices, parameters):
 
     dataset = DatasetFromSubset(torch.utils.data.Subset(train_images_torch, indices=indices),
                       transform=get_test_transforms())
-    loader = torch.utils.data.DataLoader(dataset, num_workers=8, batch_size=parameters['batch_size'])
+    loader = torch.utils.data.DataLoader(dataset, num_workers=parameters['data_loader_workers'], batch_size=parameters['batch_size'])
 
     predictions = []
     true_labels = []
@@ -62,10 +62,10 @@ def train_model(train_images_torch, train_indices, val_indices, parameters):
 
     train_data_loader = torch.utils.data.DataLoader(train_dataset,
                                                     batch_size=parameters['batch_size'],
-                                                    num_workers=8,
+                                                    num_workers=parameters['data_loader_workers'],
                                                     shuffle=True)
 
-    val_data_loader = torch.utils.data.DataLoader(val_dataset, num_workers=8, batch_size=parameters['batch_size'])
+    val_data_loader = torch.utils.data.DataLoader(val_dataset, num_workers=parameters['data_loader_workers'], batch_size=parameters['batch_size'])
 
     model = ResnetModel()
 
