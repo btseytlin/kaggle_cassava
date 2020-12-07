@@ -1,4 +1,6 @@
 import logging
+from argparse import Namespace
+
 from matplotlib import pyplot as plt
 import seaborn as sns
 
@@ -12,7 +14,10 @@ from torch import nn
 from torchvision import transforms
 from tqdm.auto import tqdm
 
-from cassava.models.resnet50 import ResnetModel
+from pytorch_lightning import Trainer
+from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
+
+from cassava.models.model import LeafDoctorModel
 
 from cassava.transforms import get_train_transforms, get_test_transforms
 
@@ -31,8 +36,6 @@ def split_data(train_labels, parameters):
 def score_model(model, train_images_torch, indices, parameters):
     logging.debug('Scoring model')
 
-    device = parameters['device']
-
     dataset = DatasetFromSubset(torch.utils.data.Subset(train_images_torch, indices=indices),
                       transform=get_test_transforms())
     loader = torch.utils.data.DataLoader(dataset, num_workers=parameters['data_loader_workers'], batch_size=parameters['batch_size'])
@@ -40,9 +43,9 @@ def score_model(model, train_images_torch, indices, parameters):
     predictions = []
     true_labels = []
     model.eval()
-    model = model.to(device)
+    model.freeze()
     for images, labels in tqdm(loader):
-        batch_preds = model.predict_label(images.to(device))
+        batch_preds = model.predict(images)
         predictions += batch_preds.tolist()
         true_labels += labels.tolist()
 
@@ -72,109 +75,49 @@ def train_model(train_images_torch, train_indices, val_indices, parameters):
 
     val_data_loader = torch.utils.data.DataLoader(val_dataset, num_workers=parameters['data_loader_workers'], batch_size=parameters['batch_size'])
 
-    model = ResnetModel()
+    # Callbacks
+    model_checkpoint = ModelCheckpoint(monitor="val_loss",
+                                       verbose=True,
+                                       dirpath=parameters['checkpoints_dir'],
+                                       filename="{epoch}_{val_loss:.4f}",
+                                       save_top_k=parameters['save_top_k_checkpoints'])
+    early_stopping = EarlyStopping('val_loss',
+                                   patience=parameters['early_stop_patience'],
+                                   verbose=True,
+                                   )
 
-    criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.AdamW(model.parameters(), lr=parameters['learning_rate'], weight_decay=parameters['weight_decay'])
-    lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=parameters['reduce_lr_on_pleteau_patience'], verbose=True)
+    hparams = Namespace(**parameters)
 
-    model = model.to(parameters['device'])
-    criterion = criterion.to(parameters['device'])
+    trainer = Trainer.from_argparse_args(
+        hparams,
+        reload_dataloaders_every_epoch = True,
+        callbacks=[model_checkpoint, early_stopping],
+    )
 
-    early_stop_patience = parameters['early_stop_patience']
-    early_stop_counter = 0
-    previous_min_val_loss = None
+    # Model
+    model = LeafDoctorModel(hparams)
 
-    train_losses = []
-    validation_losses = []
+    # LR finding
+    # lr_finder = trainer.tuner.lr_find(model,
+    #                                   train_dataloader=train_data_loader,
+    #                                   val_dataloaders=[val_data_loader])
+    # plt.figure()
+    # plt.title('LR finder results')
+    # lr_finder.plot(suggest=True)
+    # plt.show()
+    # new_lr = lr_finder.suggestion()
+    #
+    # logging.info('LR finder found this LR: %f', new_lr)
+    # model.hparams.lr = new_lr
 
-    train_epoch_losses = []
-    validation_epoch_losses = []
-
-    logging.info('Training model')
-    epoch_pbar = tqdm(range(parameters['train_epochs']))
-    for epoch in epoch_pbar:
-        model.train()
-
-        logging.debug("Epoch %d", epoch)
-        epoch_train_losses = []
-        epoch_val_losses = []
-
-        pbar = tqdm(enumerate(train_data_loader), total=len(train_data_loader))
-        for i, batch in pbar:
-            if i > parameters['batches_per_epoch']:
-                break
-            inputs, labels = batch
-            inputs = inputs.to(parameters['device'])
-            labels = labels.to(parameters['device'])
-
-            optimizer.zero_grad()
-
-            outputs = model.forward(inputs)
-            loss = criterion(outputs, labels)
-
-            loss.backward()
-            optimizer.step()
-
-            epoch_train_losses.append(loss.item())
-            pbar.set_postfix({'batch loss': round(loss.item(), 4)})
-
-        model.eval()
-        for i, batch in tqdm(enumerate(val_data_loader), total=len(val_data_loader)):
-            if i > parameters['batches_per_epoch']:
-                break
-            with torch.no_grad():
-                inputs, labels = batch
-                inputs = inputs.to(parameters['device'])
-                labels = labels.to(parameters['device'])
-
-                outputs = model.forward(inputs)
-                val_loss = criterion(outputs, labels)
-
-                epoch_val_losses.append(val_loss.item())
-
-        epoch_mean_val_loss = sum(epoch_val_losses)/len(epoch_val_losses)
-        epoch_mean_train_loss = sum(epoch_train_losses)/len(epoch_train_losses)
-        if previous_min_val_loss is None:
-            previous_min_val_loss = epoch_mean_val_loss
-        elif epoch_mean_val_loss < previous_min_val_loss:
-            previous_min_val_loss = epoch_mean_val_loss
-            early_stop_counter = 0
-            logging.debug('New minimum val loss %f, early stopping reset', previous_min_val_loss)
-        else:
-            early_stop_counter += 1
-            logging.debug('Early stop counter now %d', early_stop_counter)
-
-        lr_scheduler.step(sum(epoch_train_losses))
-
-        train_epoch_losses.append(epoch_mean_train_loss)
-        validation_epoch_losses.append(epoch_mean_val_loss)
-        logging.info("Epoch mean train loss %f", epoch_mean_train_loss)
-        logging.info("Epoch mean val loss %f", epoch_mean_val_loss)
-
-        epoch_pbar.set_postfix({
-            'train loss': epoch_mean_train_loss,
-            'val loss': epoch_mean_val_loss,
-        })
-
-        train_losses += epoch_train_losses
-        validation_losses += epoch_val_losses
-
-        if early_stop_counter >= early_stop_patience:
-            logging.info('Early stopped.')
-            break
-
+    # Training
+    trainer.fit(model, train_data_loader, val_data_loader)
     logging.info('Training finished')
 
-    metrics = {
-        'train_losses': train_losses,
-        'validation_losses': validation_losses,
-        'train_epoch_losses': train_epoch_losses,
-        'validation_epoch_losses': validation_epoch_losses,
-        'last_epoch': epoch,
-    }
-
-    return model, metrics
+    # Saving
+    best_checkpoint = model_checkpoint.best_model_path
+    model = LeafDoctorModel().load_from_checkpoint(checkpoint_path=best_checkpoint)
+    return model
 
 
 def report_on_training(train_metrics):

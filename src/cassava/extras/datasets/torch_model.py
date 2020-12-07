@@ -7,10 +7,10 @@ modo:
   filepath: modo.pt
   model: ExampleModel
 """
-from cassava.models.resnet50 import ResnetModel
+from cassava.models.model import LeafDoctorModel
 
 models = {
-    'Resnet': ResnetModel,
+    'LeafDoctorModel': LeafDoctorModel,
 }
 
 

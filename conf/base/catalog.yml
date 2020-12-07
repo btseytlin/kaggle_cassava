@@ -33,7 +33,7 @@ test_images_torch:
 model:
   type: cassava.extras.datasets.torch_model.TorchLocalModel
   filepath: data/06_models/model.pt
-  model: Resnet
+  model: LeafDoctorModel
 
 train_metrics:
   type: kedro.extras.datasets.pickle.PickleDataSet

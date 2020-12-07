@@ -15,14 +15,8 @@ def create_pipeline(**kwargs):
             node(
                 train_model,
                 ["train_images_torch", "train_indices", "val_indices", "parameters"],
-                ["model", "train_metrics"],
+                "model",
                 name='train',
-            ),
-            node(
-                report_on_training,
-                ["train_metrics"],
-                None,
-                name='report_on_training',
             ),
             node(
                 score_model,
