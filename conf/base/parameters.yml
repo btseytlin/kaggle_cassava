@@ -12,7 +12,10 @@ auto_lr_find: 0
 lr: 0.001
 weight_decay: 0.0001
 early_stop_patience: 4
-reduce_lr_on_pleteau_patience: 3
+reduce_lr_on_pleteau_patience: 2
 save_top_k_checkpoints: 1
 
 checkpoints_dir: data/06_models/checkpoints
+
+cv_splits: 3
+cv_models_dir: data/06_models/cv_folds

@@ -6,7 +6,7 @@ from kedro.io import DataCatalog
 from kedro.pipeline import Pipeline
 from kedro.versioning import Journal
 
-from cassava.pipelines import train_model, predict
+from cassava.pipelines import train_model, predict, cross_validation
 
 
 class ProjectHooks:
@@ -20,11 +20,13 @@ class ProjectHooks:
         """
         train_pipeline = train_model.create_pipeline()
         predict_pipeline = predict.create_pipeline()
+        cv_pipeline = cross_validation.create_pipeline()
 
         return {
             "train": train_pipeline,
             "predict": predict_pipeline,
-            "__default__": train_pipeline + predict_pipeline,
+            "cv": cv_pipeline,
+            "__default__": cv_pipeline + predict_pipeline,
         }
 
     @hook_impl

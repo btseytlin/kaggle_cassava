@@ -46,3 +46,7 @@ val_scores:
 submission:
   type: pandas.CSVDataSet
   filepath: data/07_model_output/submission.csv
+
+cv_results:
+  type: kedro.extras.datasets.pickle.PickleDataSet
+  filepath: data/08_reporting/cv_results.pkl

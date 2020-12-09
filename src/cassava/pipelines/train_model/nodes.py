@@ -18,10 +18,10 @@ from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 
 from cassava.models.model import LeafDoctorModel
-
 from cassava.transforms import get_train_transforms, get_test_transforms
-
 from cassava.utils import DatasetFromSubset
+from cassava.pipelines.predict.nodes import predict
+from cassava.node_helpers import score
 
 
 def split_data(train_labels, parameters):
@@ -34,29 +34,19 @@ def split_data(train_labels, parameters):
 
 
 def score_model(model, train_images_torch, indices, parameters):
-    logging.debug('Scoring model')
+    logging.info('Scoring model')
+    labels = train_images_torch.labels[indices]
+    predictions = predict(model,
+                          dataset=train_images_torch,
+                          indices=indices,
+                          batch_size=parameters['batch_size'],
+                          num_workers=parameters['data_loader_workers'],
+                          transform=get_test_transforms())
 
-    dataset = DatasetFromSubset(torch.utils.data.Subset(train_images_torch, indices=indices),
-                      transform=get_test_transforms())
-    loader = torch.utils.data.DataLoader(dataset, num_workers=parameters['data_loader_workers'], batch_size=parameters['batch_size'])
-
-    predictions = []
-    true_labels = []
-    model.eval()
-    model.freeze()
-    for images, labels in tqdm(loader):
-        batch_preds = model.predict(images)
-        predictions += batch_preds.tolist()
-        true_labels += labels.tolist()
-
-    scores = {
-        'accuracy': accuracy_score(predictions, true_labels),
-        'confusion_matrix': confusion_matrix(predictions, true_labels),
-        'f1_score': f1_score(predictions, true_labels, average='weighted'),
-    }
+    scores = score(predictions, labels)
 
     logging.info(f'Validation scores:\n{scores}')
-    return scores
+    return scores, predictions
 
 
 def train_model(train_images_torch, train_indices, val_indices, parameters):
@@ -118,22 +108,3 @@ def train_model(train_images_torch, train_indices, val_indices, parameters):
     best_checkpoint = model_checkpoint.best_model_path
     model = LeafDoctorModel().load_from_checkpoint(checkpoint_path=best_checkpoint)
     return model
-
-
-def report_on_training(train_metrics):
-    plt.figure(figsize=(10, 7))
-    sns.lineplot(x=range(len(train_metrics['train_losses'])), y=train_metrics['train_losses'], label='Training loss')
-    plt.title('Training loss')
-    plt.legend()
-    plt.show()
-
-    plt.figure(figsize=(10, 7))
-    sns.lineplot(x=range(len(train_metrics['validation_losses'])), y=train_metrics['validation_losses'], label='Validation loss')
-    plt.legend()
-    plt.show()
-
-    plt.figure(figsize=(10, 7))
-    sns.lineplot(x=range(len(train_metrics['train_epoch_losses'])), y=train_metrics['train_epoch_losses'], label='Training loss per epoch')
-    sns.lineplot(x=range(len(train_metrics['validation_epoch_losses'])), y=train_metrics['validation_epoch_losses'], label='Validation loss per epoch')
-    plt.legend()
-    plt.show()

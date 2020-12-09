@@ -1,6 +1,6 @@
 from kedro.pipeline import Pipeline, node
 
-from .nodes import split_data, train_model, score_model, report_on_training
+from .nodes import split_data, train_model, score_model
 
 
 def create_pipeline(**kwargs):
@@ -21,7 +21,7 @@ def create_pipeline(**kwargs):
             node(
                 score_model,
                 ["model", "train_images_torch", "val_indices", "parameters"],
-                "val_scores",
+                ["val_scores", "val_predictions"],
                 name='val_score',
             ),
         ]

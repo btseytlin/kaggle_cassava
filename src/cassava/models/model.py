@@ -19,12 +19,11 @@ class LeafDoctorModel(pl.LightningModule):
         return self.trunk(x)
 
     def predict_proba(self, x):
-        logits = self.forward(x)
-        probabilities = nn.functional.softmax(logits, dim=1)
+        probabilities = nn.functional.softmax(self.forward(x), dim=1)
         return probabilities
 
     def predict(self, x):
-        return torch.max(self.predict_proba(x), 1)[1]
+        return torch.max(self.forward(x), 1)[1]
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(),
