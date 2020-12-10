@@ -35,8 +35,10 @@ def split_data(train_labels, parameters):
 
 def score_model(model, train_images_torch, indices, parameters):
     logging.info('Scoring model')
+    if parameters.get('limit_val_batches'):
+        indices = indices[:parameters['limit_val_batches']*parameters['batch_size']]
     labels = train_images_torch.labels[indices]
-    predictions = predict(model,
+    predictions, probas = predict(model,
                           dataset=train_images_torch,
                           indices=indices,
                           batch_size=parameters['batch_size'],

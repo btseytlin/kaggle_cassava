@@ -17,8 +17,7 @@ def predict_submission(cv_results, test_images_torch, sample_submission, paramet
     fold_model_names = [cv_results[fold]['model_path'] for fold in cv_results if fold != 'summary']
 
     all_probas = []
-    for fname in fold_model_names:
-        model_path = os.path.join(parameters['cv_models_dir'], fname)
+    for model_path in fold_model_names:
         model = LeafDoctorModel()
         model.load_state_dict(torch.load(model_path))
 
