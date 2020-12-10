@@ -29,8 +29,8 @@ def raw_reader(path):
 
 class ImageLMDBDataset(data.Dataset):
     def __init__(self, db_path, transform=None, target_transform=None):
-        self.db_path = db_path
-        self.env = lmdb.open(bytes(self.db_path), subdir=os.path.isdir(db_path),
+        self.db_path = str(db_path)
+        self.env = lmdb.open(self.db_path, subdir=os.path.isdir(db_path),
                                      readonly=True, lock=False,
                                      readahead=False, meminit=False)
         with self.env.begin(write=False) as txn:
@@ -46,16 +46,7 @@ class ImageLMDBDataset(data.Dataset):
             byteflow = txn.get(self.keys[index])
 
         unpacked = deserialize_decompress(byteflow)
-
-        # load image
-        imgbuf = unpacked[0]
-        buf = six.BytesIO()
-        buf.write(imgbuf)
-        buf.seek(0)
-        image = Image.open(buf).convert('RGB')
-
-        # load label
-        label = unpacked[1]
+        image, label = unpacked
 
         if self.transform:
             image = self.transform(image=image)['image']
