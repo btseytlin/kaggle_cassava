@@ -6,7 +6,7 @@ from kedro.io import DataCatalog
 from kedro.pipeline import Pipeline
 from kedro.versioning import Journal
 
-from cassava.pipelines import train_model, predict, cross_validation
+from cassava.pipelines import prepare, pretrain, train_model, cross_validation, predict
 
 
 class ProjectHooks:
@@ -18,15 +18,19 @@ class ProjectHooks:
             A mapping from a pipeline name to a ``Pipeline`` object.
 
         """
+        prepare_pipeline = prepare.create_pipeline()
+        pretrain_pipeline = pretrain.create_pipeline()
         train_pipeline = train_model.create_pipeline()
         predict_pipeline = predict.create_pipeline()
         cv_pipeline = cross_validation.create_pipeline()
 
         return {
+            "prepare": prepare_pipeline,
+            "pretrain": pretrain_pipeline,
             "train": train_pipeline,
             "predict": predict_pipeline,
             "cv": cv_pipeline,
-            "__default__": cv_pipeline + predict_pipeline,
+            "__default__": prepare_pipeline + pretrain_pipeline + cv_pipeline + predict_pipeline,
         }
 
     @hook_impl

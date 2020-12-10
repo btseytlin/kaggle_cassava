@@ -1,3 +1,10 @@
+import torch
+from tqdm.auto import tqdm
+from sklearn.metrics import accuracy_score, f1_score
+from cassava.transforms import get_test_transforms
+from cassava.utils import DatasetFromSubset
+
+
 def score(predictions, labels):
     return {
         'accuracy': accuracy_score(predictions, labels),
@@ -19,9 +26,14 @@ def predict(model, dataset, indices, batch_size=10, num_workers=4, transform=Non
     predictions = []
     probas = []
     model.eval()
-    model.freeze()
-    for images, labels in tqdm(loader):
-        batch_preds = model.predict(images)
-        predictions += batch_preds.tolist()
-        probas += model.predict_proba(images).tolist()
+    with torch.no_grad():
+        for images, labels in tqdm(loader):
+            probas = model.predict_proba(images, cuda=True)
+            batch_preds = torch.max(probas, 1)[1]
+            predictions.append(batch_preds)
+            probas.append(probas)
+
+    predictions = torch.hstack(predictions).flatten().tolist()
+    probas = torch.hstack(probas).flatten().tolist()
+
     return predictions, probas

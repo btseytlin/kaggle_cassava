@@ -30,6 +30,19 @@ test_images_torch:
   labels_path: sample_submission.csv
   images_path: test_images
 
+train_images_lmdb:
+  type: cassava.extras.datasets.lmdb_dataset.KedroImageLMDBDataSet
+  filepath: data/03_primary/train.lmdb
+
+test_images_lmdb:
+  type: cassava.extras.datasets.lmdb_dataset.KedroImageLMDBDataSet
+  filepath: data/03_primary/test.lmdb
+
+pretrained_model:
+  type: cassava.extras.datasets.torch_model.TorchLocalModel
+  filepath: data/06_models/pretrained_model.pt
+  model: LeafDoctorModel
+
 model:
   type: cassava.extras.datasets.torch_model.TorchLocalModel
   filepath: data/06_models/model.pt

@@ -1,23 +1,13 @@
 import logging
 from argparse import Namespace
-
-from matplotlib import pyplot as plt
-import seaborn as sns
-
-import numpy as np
-import pandas as pd
-from sklearn.metrics import accuracy_score, f1_score, confusion_matrix
-
 from sklearn.model_selection import train_test_split
 import torch
-from torch import nn
-from torchvision import transforms
-from tqdm.auto import tqdm
 
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 
 from cassava.models.model import LeafDoctorModel
+from cassava.models.byol import BYOL
 from cassava.transforms import get_train_transforms, get_test_transforms
 from cassava.utils import DatasetFromSubset
 from cassava.pipelines.predict.nodes import predict
@@ -33,25 +23,7 @@ def split_data(train_labels, parameters):
     return train_indices, val_indices
 
 
-def score_model(model, train_images_torch, indices, parameters):
-    logging.info('Scoring model')
-    if parameters.get('limit_val_batches'):
-        indices = indices[:parameters['limit_val_batches']*parameters['batch_size']]
-    labels = train_images_torch.labels[indices]
-    predictions, probas = predict(model,
-                          dataset=train_images_torch,
-                          indices=indices,
-                          batch_size=parameters['batch_size'],
-                          num_workers=parameters['data_loader_workers'],
-                          transform=get_test_transforms())
-
-    scores = score(predictions, labels)
-
-    logging.info(f'Validation scores:\n{scores}')
-    return scores, predictions
-
-
-def train_model(train_images_torch, train_indices, val_indices, parameters):
+def train_model(pretrained_model, train_images_torch, train_indices, val_indices, parameters):
     train_transform, val_transform = get_train_transforms(), get_test_transforms()
 
     train_dataset = DatasetFromSubset(torch.utils.data.Subset(train_images_torch, indices=train_indices),
@@ -61,33 +33,36 @@ def train_model(train_images_torch, train_indices, val_indices, parameters):
                                     transform=val_transform)
 
     train_data_loader = torch.utils.data.DataLoader(train_dataset,
-                                                    batch_size=parameters['batch_size'],
+                                                    batch_size=parameters['classifier']['batch_size'],
                                                     num_workers=parameters['data_loader_workers'],
                                                     shuffle=True)
 
-    val_data_loader = torch.utils.data.DataLoader(val_dataset, num_workers=parameters['data_loader_workers'], batch_size=parameters['batch_size'])
+    val_data_loader = torch.utils.data.DataLoader(val_dataset,
+                                                  num_workers=parameters['data_loader_workers'],
+                                                  batch_size=parameters['classifier']['batch_size'])
 
     # Callbacks
-    model_checkpoint = ModelCheckpoint(monitor="val_loss",
+    model_checkpoint = ModelCheckpoint(monitor="val_acc",
                                        verbose=True,
-                                       dirpath=parameters['checkpoints_dir'],
-                                       filename="{epoch}_{val_loss:.4f}",
-                                       save_top_k=parameters['save_top_k_checkpoints'])
-    early_stopping = EarlyStopping('val_loss',
-                                   patience=parameters['early_stop_patience'],
+                                       dirpath=parameters['classifier']['checkpoints_dir'],
+                                       filename="{epoch}_{val_acc:.4f}",
+                                       save_top_k=parameters['classifier']['save_top_k_checkpoints'])
+    early_stopping = EarlyStopping('val_acc',
+                                   patience=parameters['classifier']['early_stop_patience'],
                                    verbose=True,
                                    )
 
-    hparams = Namespace(**parameters)
+    hparams = Namespace(**parameters['classifier'])
 
     trainer = Trainer.from_argparse_args(
-        hparams,
+        hparams['classifier'],
         reload_dataloaders_every_epoch = True,
         callbacks=[model_checkpoint, early_stopping],
     )
 
     # Model
     model = LeafDoctorModel(hparams)
+    model.load_state_dict(pretrained_model.state_dict())
 
     # LR finding
     # lr_finder = trainer.tuner.lr_find(model,
@@ -103,10 +78,28 @@ def train_model(train_images_torch, train_indices, val_indices, parameters):
     # model.hparams.lr = new_lr
 
     # Training
-    trainer.fit(model, train_data_loader, val_data_loader)
+    trainer.fit(pretrained_model, train_data_loader, val_data_loader)
     logging.info('Training finished')
 
     # Saving
     best_checkpoint = model_checkpoint.best_model_path
     model = LeafDoctorModel().load_from_checkpoint(checkpoint_path=best_checkpoint)
     return model
+
+
+def score_model(model, train_images_torch, indices, parameters):
+    logging.info('Scoring model')
+    if parameters['classifier'].get('limit_val_batches'):
+        indices = indices[:parameters['classifier']['limit_val_batches']*parameters['classifier']['batch_size']]
+    labels = train_images_torch.labels[indices]
+    predictions, probas = predict(model,
+                          dataset=train_images_torch,
+                          indices=indices,
+                          batch_size=parameters['classifier']['batch_size'],
+                          num_workers=parameters['data_loader_workers'],
+                          transform=get_test_transforms())
+
+    scores = score(predictions, labels)
+
+    logging.info(f'Validation scores:\n{scores}')
+    return scores, predictions

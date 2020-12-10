@@ -8,7 +8,7 @@ def create_pipeline(**kwargs):
         [
             node(
                 cross_validation,
-                ["train_images_torch", "parameters"],
+                ["pretrained_model", "train_images_torch", "test_images_torch", "parameters"],
                 "cv_results",
                 name='cross_validation',
             ),

@@ -18,11 +18,15 @@ class LeafDoctorModel(pl.LightningModule):
     def forward(self, x):
         return self.trunk(x)
 
-    def predict_proba(self, x):
+    def predict_proba(self, x, cuda=True):
+        if cuda:
+            x = x.cuda()
         probabilities = nn.functional.softmax(self.forward(x), dim=1)
         return probabilities
 
-    def predict(self, x):
+    def predict(self, x, cuda=True):
+        if cuda:
+            x = x.cuda()
         return torch.max(self.forward(x), 1)[1]
 
     def configure_optimizers(self):
@@ -34,7 +38,7 @@ class LeafDoctorModel(pl.LightningModule):
         return {
             'optimizer': optimizer,
             'lr_scheduler': lr_scheduler,
-            'monitor': 'val_loss',
+            'monitor': 'val_acc',
             'interval': 'epoch',
             'frequency': 1
         }
@@ -48,6 +52,7 @@ class LeafDoctorModel(pl.LightningModule):
         self.log("train_loss", loss, on_step=False, on_epoch=True, prog_bar=True, logger=True)
         return loss
 
+    @torch.no_grad()
     def validation_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self(x)

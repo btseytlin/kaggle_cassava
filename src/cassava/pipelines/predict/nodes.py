@@ -24,7 +24,7 @@ def predict_submission(cv_results, test_images_torch, sample_submission, paramet
         predictions, probas = predict(model,
                                   dataset=test_images_torch,
                                   indices=list(range(len(test_images_torch))),
-                                  batch_size=parameters['batch_size'],
+                                  batch_size=parameters['classifier']['batch_size'],
                                   num_workers=parameters['data_loader_workers'],
                                   transform=get_test_transforms())
 
