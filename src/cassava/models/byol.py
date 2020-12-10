@@ -1,3 +1,5 @@
+import numpy as np
+from argparse import Namespace
 from copy import deepcopy
 from itertools import chain
 from typing import Dict, List
@@ -109,7 +111,7 @@ class BYOL(pl.LightningModule):
         hidden_size: int = 4096,
         augment_fn: Callable = None,
         beta: float = 0.99,
-        **hparams,
+        hparams = None,
     ):
         super().__init__()
         self.augment = default_augmentation(image_size) if augment_fn is None else augment_fn
@@ -118,7 +120,7 @@ class BYOL(pl.LightningModule):
             model, projection_size, hidden_size, layer=hidden_layer
         )
         self.predictor = nn.Linear(projection_size, projection_size, hidden_size)
-        self.hparams = hparams
+        self.hparams = hparams or Namespace()
         self._target = None
 
         self.encoder(torch.zeros(2, 3, *image_size))

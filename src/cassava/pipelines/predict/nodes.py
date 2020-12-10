@@ -30,7 +30,7 @@ def predict_submission(cv_results, test_images_torch, sample_submission, paramet
 
         all_probas.append(probas)
 
-    aggregated_probas = np.mean(all_probas, axis=0)
+    aggregated_probas = np.mean(all_probas, axis=0).reshape(-1, 5)
     pred_labels = np.argmax(aggregated_probas, 1)
     sample_submission.label = pred_labels
     return sample_submission

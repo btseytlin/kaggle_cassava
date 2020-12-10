@@ -28,12 +28,13 @@ def predict(model, dataset, indices, batch_size=10, num_workers=4, transform=Non
     predictions = []
     probas = []
     model.eval()
+    model.cuda()
     with torch.no_grad():
         for images, labels in tqdm(loader):
-            probas = model.predict_proba(images, cuda=True)
-            batch_preds = torch.max(probas, 1)[1]
+            batch_probas = model.predict_proba(images.cuda(), cuda=True)
+            batch_preds = torch.max(batch_probas, 1)[1]
             predictions.append(batch_preds)
-            probas.append(probas)
+            probas.append(batch_probas)
 
     predictions = torch.hstack(predictions).flatten().tolist()
     probas = torch.hstack(probas).flatten().tolist()
@@ -41,17 +42,18 @@ def predict(model, dataset, indices, batch_size=10, num_workers=4, transform=Non
     return predictions, probas
 
 
-def lr_find(trainer, model, train_data_loader, val_data_loader, plot=False):
+def lr_find(trainer, model, train_data_loader, val_data_loader=None, plot=False):
+    val_dataloaders = [val_data_loader] if  val_data_loader else None
     lr_finder = trainer.tuner.lr_find(model,
                                       train_dataloader=train_data_loader,
-                                      val_dataloaders=[val_data_loader])
+                                      val_dataloaders=val_dataloaders)
     if plot:
         plt.figure()
         plt.title('LR finder results')
         lr_finder.plot(suggest=True)
         plt.show()
 
-    newlr = lr_finder.suggestion
+    newlr = lr_finder.suggestion()
     logging.info('LR finder suggestion: %f', newlr)
 
     return newlr

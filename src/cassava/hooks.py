@@ -30,7 +30,7 @@ class ProjectHooks:
             "train": train_pipeline,
             "predict": predict_pipeline,
             "cv": cv_pipeline,
-            "__default__": prepare_pipeline + pretrain_pipeline + cv_pipeline + predict_pipeline,
+            "__default__": pretrain_pipeline + cv_pipeline + predict_pipeline,
         }
 
     @hook_impl

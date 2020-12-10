@@ -5,7 +5,7 @@ cv_models_dir: data/06_models/cv_folds
 
 validation_size: 0.15
 
-data_loader_workers: 6
+data_loader_workers: 4
 
 classifier:
   gpus: -1
@@ -20,15 +20,21 @@ classifier:
   save_top_k_checkpoints: 1
   checkpoints_dir: data/06_models/classifier/checkpoints
 
+  #limit_val_batches: 2
+  #limit_train_batches: 2
+
 byol:
   gpus: -1
   batch_size: 10
-  max_epochs: 10
+  max_epochs: 100
   max_steps: 0
   auto_lr_find: 1
+  lr: 0.001
   step_lr: 3
-  step_lr_gamma: 0.1
+  step_lr_gamma: 0.5
   weight_decay: 0.0001
   limit_val_batches: 1
-  accumulate_grad_batches: 4
+  early_stop_patience: 3
+
+  #limit_train_batches: 2
 

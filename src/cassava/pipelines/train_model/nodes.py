@@ -23,13 +23,13 @@ def split_data(train_labels, parameters):
     return train_indices, val_indices
 
 
-def train_model(pretrained_model, train_images_torch, train_indices, val_indices, parameters):
+def train_model(pretrained_model, train_images_lmdb, train_indices, val_indices, parameters):
     train_transform, val_transform = get_train_transforms(), get_test_transforms()
 
-    train_dataset = DatasetFromSubset(torch.utils.data.Subset(train_images_torch, indices=train_indices),
+    train_dataset = DatasetFromSubset(torch.utils.data.Subset(train_images_lmdb, indices=train_indices),
                                       transform=train_transform)
 
-    val_dataset = DatasetFromSubset(torch.utils.data.Subset(train_images_torch, indices=val_indices),
+    val_dataset = DatasetFromSubset(torch.utils.data.Subset(train_images_lmdb, indices=val_indices),
                                     transform=val_transform)
 
     train_data_loader = torch.utils.data.DataLoader(train_dataset,
@@ -55,7 +55,7 @@ def train_model(pretrained_model, train_images_torch, train_indices, val_indices
     hparams = Namespace(**parameters['classifier'])
 
     trainer = Trainer.from_argparse_args(
-        hparams['classifier'],
+        hparams,
         reload_dataloaders_every_epoch = True,
         terminate_on_nan=True,
         callbacks=[model_checkpoint, early_stopping],
@@ -66,7 +66,7 @@ def train_model(pretrained_model, train_images_torch, train_indices, val_indices
     model.load_state_dict(pretrained_model.state_dict())
 
     # Training
-    trainer.fit(pretrained_model, train_data_loader, val_data_loader)
+    trainer.fit(model, train_data_loader, val_data_loader)
     logging.info('Training finished')
 
     # Saving
