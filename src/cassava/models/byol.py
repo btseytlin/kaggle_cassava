@@ -139,10 +139,16 @@ class BYOL(pl.LightningModule):
     # --- Methods required for PyTorch Lightning only! ---
 
     def configure_optimizers(self):
-        optimizer = getattr(optim, self.hparams.get("optimizer", "AdamW"))
-        lr = self.hparams.get("lr", 1e-4)
-        weight_decay = self.hparams.get("weight_decay", 1e-6)
-        return optimizer(self.parameters(), lr=lr, weight_decay=weight_decay)
+        optimizer = optim.AdamW(self.parameters(), lr=self.hparams.lr, weight_decay=self.hparams.weight_decay)
+        lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer,
+                                                       step_size=self.hparams.step_lr,
+                                                       gamma=self.hparams.step_lr_gamma)
+        return {
+            'optimizer': optimizer,
+            'lr_scheduler': lr_scheduler,
+            'interval': 'epoch',
+            'frequency': 1
+        }
 
     def training_step(self, batch, *_) -> Dict[str, Union[Tensor, Dict]]:
         x = batch[0]

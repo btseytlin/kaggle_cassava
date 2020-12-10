@@ -57,25 +57,13 @@ def train_model(pretrained_model, train_images_torch, train_indices, val_indices
     trainer = Trainer.from_argparse_args(
         hparams['classifier'],
         reload_dataloaders_every_epoch = True,
+        terminate_on_nan=True,
         callbacks=[model_checkpoint, early_stopping],
     )
 
     # Model
     model = LeafDoctorModel(hparams)
     model.load_state_dict(pretrained_model.state_dict())
-
-    # LR finding
-    # lr_finder = trainer.tuner.lr_find(model,
-    #                                   train_dataloader=train_data_loader,
-    #                                   val_dataloaders=[val_data_loader])
-    # plt.figure()
-    # plt.title('LR finder results')
-    # lr_finder.plot(suggest=True)
-    # plt.show()
-    # new_lr = lr_finder.suggestion()
-    #
-    # logging.info('LR finder found this LR: %f', new_lr)
-    # model.hparams.lr = new_lr
 
     # Training
     trainer.fit(pretrained_model, train_data_loader, val_data_loader)

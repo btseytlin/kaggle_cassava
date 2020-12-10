@@ -5,7 +5,7 @@ cv_models_dir: data/06_models/cv_folds
 
 validation_size: 0.15
 
-data_loader_workers: 4
+data_loader_workers: 6
 
 classifier:
   gpus: -1
@@ -16,7 +16,6 @@ classifier:
   lr: 0.001
   weight_decay: 0.0001
   early_stop_patience: 4
-  accumulate_grad_batches: 4
   reduce_lr_on_pleteau_patience: 2
   save_top_k_checkpoints: 1
   checkpoints_dir: data/06_models/classifier/checkpoints
@@ -27,7 +26,9 @@ byol:
   max_epochs: 10
   max_steps: 0
   auto_lr_find: 1
+  step_lr: 3
+  step_lr_gamma: 0.1
   weight_decay: 0.0001
+  limit_val_batches: 1
   accumulate_grad_batches: 4
-  save_top_k_checkpoints: 1
-  checkpoints_dir: data/06_models/byol/checkpoints
+

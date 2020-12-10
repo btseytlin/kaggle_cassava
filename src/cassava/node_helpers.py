@@ -1,8 +1,10 @@
+import logging
 import torch
 from tqdm.auto import tqdm
 from sklearn.metrics import accuracy_score, f1_score
 from cassava.transforms import get_test_transforms
 from cassava.utils import DatasetFromSubset
+from matplotlib import pyplot as plt
 
 
 def score(predictions, labels):
@@ -37,3 +39,19 @@ def predict(model, dataset, indices, batch_size=10, num_workers=4, transform=Non
     probas = torch.hstack(probas).flatten().tolist()
 
     return predictions, probas
+
+
+def lr_find(trainer, model, train_data_loader, val_data_loader, plot=False):
+    lr_finder = trainer.tuner.lr_find(model,
+                                      train_dataloader=train_data_loader,
+                                      val_dataloaders=[val_data_loader])
+    if plot:
+        plt.figure()
+        plt.title('LR finder results')
+        lr_finder.plot(suggest=True)
+        plt.show()
+
+    newlr = lr_finder.suggestion
+    logging.info('LR finder suggestion: %f', newlr)
+
+    return newlr
