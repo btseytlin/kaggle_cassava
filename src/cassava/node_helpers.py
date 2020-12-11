@@ -23,21 +23,25 @@ def predict(model, dataset, indices, batch_size=10, num_workers=4, transform=Non
     loader = torch.utils.data.DataLoader(dataset,
                                          batch_size=batch_size,
                                          num_workers=num_workers,
-                                         shuffle=False)
+                                         shuffle=False,
+                                         drop_last=False)
 
     predictions = []
     probas = []
     model.eval()
-    model.cuda()
+    if torch.cuda.is_available():
+        model = model.cuda()
     with torch.no_grad():
         for images, labels in tqdm(loader):
-            batch_probas = model.predict_proba(images.cuda(), cuda=True)
+            if torch.cuda.is_available():
+                images = images.cuda()
+            batch_probas = model.predict_proba(images)
             batch_preds = torch.max(batch_probas, 1)[1]
             predictions.append(batch_preds)
             probas.append(batch_probas)
 
     predictions = torch.hstack(predictions).flatten().tolist()
-    probas = torch.hstack(probas).flatten().tolist()
+    probas = torch.vstack(probas).tolist()
 
     return predictions, probas
 

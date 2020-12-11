@@ -18,15 +18,11 @@ class LeafDoctorModel(pl.LightningModule):
     def forward(self, x):
         return self.trunk(x)
 
-    def predict_proba(self, x, cuda=True):
-        if cuda:
-            x = x.cuda()
+    def predict_proba(self, x):
         probabilities = nn.functional.softmax(self.forward(x), dim=1)
         return probabilities
 
-    def predict(self, x, cuda=True):
-        if cuda:
-            x = x.cuda()
+    def predict(self, x):
         return torch.max(self.forward(x), 1)[1]
 
     def configure_optimizers(self):
