@@ -28,13 +28,14 @@ byol:
   batch_size: 10
   max_epochs: 100
   max_steps: 0
-  auto_lr_find: 1
-  lr: 0.001
-  step_lr: 3
-  step_lr_gamma: 0.5
+  auto_lr_find: 0
+  lr: 0.01
+  reduce_lr_on_pleteau_patience: 2
   weight_decay: 0.0001
+  limit_train_batches: 300
   limit_val_batches: 1
-  early_stop_patience: 3
+  accumulate_grad_batches: 4
+  early_stop_patience: 6
 
   #limit_train_batches: 2
 

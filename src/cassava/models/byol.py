@@ -34,11 +34,11 @@ class RandomApply(nn.Module):
 def default_augmentation(image_size: Tuple[int, int] = (224, 224)) -> nn.Module:
     return nn.Sequential(
         tf.Resize(size=image_size),
-        RandomApply(aug.ColorJitter(0.8, 0.8, 0.8, 0.2), p=0.8),
-        aug.RandomGrayscale(p=0.2),
+        RandomApply(aug.ColorJitter(0.1, 0.1, 0.1, 0.1), p=0.8),
+        aug.RandomVerticalFlip(),
         aug.RandomHorizontalFlip(),
-        RandomApply(filters.GaussianBlur2d((3, 3), (1.5, 1.5)), p=0.1),
-        aug.RandomResizedCrop(size=image_size),
+        RandomApply(filters.GaussianBlur2d((3, 3), (1.0, 1.0)), p=0.1),
+        aug.RandomResizedCrop(size=image_size, scale=(0.3, 0.7)),
         aug.Normalize(
             mean=torch.tensor([0.485, 0.456, 0.406]),
             std=torch.tensor([0.229, 0.224, 0.225]),
@@ -142,12 +142,12 @@ class BYOL(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer = optim.AdamW(self.parameters(), lr=self.hparams.lr, weight_decay=self.hparams.weight_decay)
-        lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer,
-                                                       step_size=self.hparams.step_lr,
-                                                       gamma=self.hparams.step_lr_gamma)
+        lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
+                                                                  patience=self.hparams.reduce_lr_on_pleteau_patience)
         return {
             'optimizer': optimizer,
             'lr_scheduler': lr_scheduler,
+            'monitor': 'train_loss',
             'interval': 'epoch',
             'frequency': 1
         }
