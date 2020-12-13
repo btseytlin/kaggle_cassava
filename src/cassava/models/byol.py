@@ -138,12 +138,11 @@ class BYOL(pl.LightningModule):
         for p, pt in zip(self.encoder.parameters(), self.target.parameters()):
             pt.data = self.beta * pt.data + (1 - self.beta) * p.data
 
-    # --- Methods required for PyTorch Lightning only! ---
-
     def configure_optimizers(self):
         optimizer = optim.AdamW(self.parameters(), lr=self.hparams.lr, weight_decay=self.hparams.weight_decay)
         lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
-                                                                  patience=self.hparams.reduce_lr_on_pleteau_patience)
+                                                                  patience=self.hparams.reduce_lr_on_pleteau_patience,
+                                                                  verbose=True)
         return {
             'optimizer': optimizer,
             'lr_scheduler': lr_scheduler,
@@ -164,6 +163,10 @@ class BYOL(pl.LightningModule):
 
         self.log("train_loss", loss.item())
         return {"loss": loss}
+
+    def train_epoch_end(self, outputs):
+        train_loss = sum(x["loss"] for x in outputs) / len(outputs)
+        self.log("train_loss", train_loss.item())
 
     @torch.no_grad()
     def validation_step(self, batch, *_) -> Dict[str, Union[Tensor, Dict]]:

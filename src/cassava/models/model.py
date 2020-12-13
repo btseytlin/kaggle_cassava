@@ -30,7 +30,8 @@ class LeafDoctorModel(pl.LightningModule):
                                       lr=self.hparams.lr or self.hparams.learning_rate,
                                       weight_decay=self.hparams.weight_decay)
         lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
-                                                                  patience=self.hparams.reduce_lr_on_pleteau_patience)
+                                                                  patience=self.hparams.reduce_lr_on_pleteau_patience,
+                                                                  verbose=True)
         return {
             'optimizer': optimizer,
             'lr_scheduler': lr_scheduler,

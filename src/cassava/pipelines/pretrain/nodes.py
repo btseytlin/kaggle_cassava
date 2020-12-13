@@ -31,6 +31,11 @@ def pretrain_model(train_images_lmdb, test_images_lmdb, parameters):
     model = LeafDoctorModel(classifier_params)
 
     hparams = Namespace(**parameters['byol'])
+
+    if hparams.from_checkpoint:
+        logging.warning("Pretraining from checkpoint")
+        model.load_state_dict(torch.load('data/06_models/pretrained_model.pt'))
+
     byol = BYOL(model.trunk, image_size=(256, 256), hparams=hparams)
     byol.cuda()
 
