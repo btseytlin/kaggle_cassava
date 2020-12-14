@@ -34,7 +34,7 @@ class RandomApply(nn.Module):
 def default_augmentation(image_size: Tuple[int, int] = (224, 224)) -> nn.Module:
     return nn.Sequential(
         tf.Resize(size=image_size),
-        RandomApply(aug.ColorJitter(0.1, 0.1, 0.1, 0.1), p=0.8),
+        RandomApply(aug.ColorJitter(0.2, 0.2, 0.2, 0.2), p=0.8),
         aug.RandomVerticalFlip(),
         aug.RandomHorizontalFlip(),
         RandomApply(filters.GaussianBlur2d((3, 3), (1.0, 1.0)), p=0.1),
