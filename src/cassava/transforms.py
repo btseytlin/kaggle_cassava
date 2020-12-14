@@ -3,6 +3,15 @@ import albumentations as A
 from albumentations.pytorch import ToTensorV2
 from torchvision import transforms
 
+dummy_transforms = A.Compose([
+    A.ToFloat(max_value=1.0),
+    ToTensorV2(),
+])
+
+lmdb_transforms = A.Compose([
+    A.Resize(400, 400),
+])
+
 
 def get_train_transforms():
     return A.Compose([

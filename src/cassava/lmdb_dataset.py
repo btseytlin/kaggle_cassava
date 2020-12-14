@@ -36,6 +36,7 @@ class ImageLMDBDataset(data.Dataset):
         with self.env.begin(write=False) as txn:
             self.length = deserialize_decompress(txn.get(b'__len__'))
             self.keys = deserialize_decompress(txn.get(b'__keys__'))
+            self.labels = deserialize_decompress(txn.get(b'labels'))
 
         self.transform = transform
         self.target_transform = target_transform
@@ -81,7 +82,7 @@ def dataset_to_lmdb(dataset, out_path, write_frequency=2000, num_workers=8, map_
         if idx % write_frequency == 0:
             txn.commit()
             txn = db.begin(write=True)
-        labels.append(label)
+        labels.append(int(label))
 
     # finish iterating through dataset
     logging.debug('Final commit')
@@ -92,6 +93,7 @@ def dataset_to_lmdb(dataset, out_path, write_frequency=2000, num_workers=8, map_
     with db.begin(write=True) as txn:
         txn.put(b'__keys__', compress_serialize(keys))
         txn.put(b'__len__', compress_serialize(len(keys)))
+        txn.put(b'labels', compress_serialize(list(labels)))
 
     logging.debug("Flushing database ...")
     db.sync()

@@ -23,7 +23,7 @@ def split_data(train_labels, parameters):
     return train_indices, val_indices
 
 
-def train_model(pretrained_model, train_images_lmdb, train_indices, val_indices, parameters):
+def train_model(finetuned_model, train_images_lmdb, train_indices, val_indices, parameters):
     train_transform, val_transform = get_train_transforms(), get_test_transforms()
 
     train_dataset = DatasetFromSubset(torch.utils.data.Subset(train_images_lmdb, indices=train_indices),
@@ -63,7 +63,7 @@ def train_model(pretrained_model, train_images_lmdb, train_indices, val_indices,
 
     # Model
     model = LeafDoctorModel(hparams)
-    model.load_state_dict(pretrained_model.state_dict())
+    model.load_state_dict(finetuned_model.state_dict())
 
     # Training
     trainer.fit(model, train_data_loader, val_data_loader)

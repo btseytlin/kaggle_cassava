@@ -1,7 +1,11 @@
 import logging
 import torch
+from pytorch_lightning import Trainer
+from pytorch_lightning.callbacks import EarlyStopping
 from tqdm.auto import tqdm
 from sklearn.metrics import accuracy_score, f1_score
+
+from cassava.models.byol import BYOL
 from cassava.transforms import get_test_transforms
 from cassava.utils import DatasetFromSubset
 from matplotlib import pyplot as plt
@@ -47,7 +51,8 @@ def predict(model, dataset, indices, batch_size=10, num_workers=4, transform=Non
 
 
 def lr_find(trainer, model, train_data_loader, val_data_loader=None, plot=False):
-    val_dataloaders = [val_data_loader] if  val_data_loader else None
+    val_dataloaders = [val_data_loader] if val_data_loader else None
+
     lr_finder = trainer.tuner.lr_find(model,
                                       train_dataloader=train_data_loader,
                                       val_dataloaders=val_dataloaders)
@@ -61,3 +66,26 @@ def lr_find(trainer, model, train_data_loader, val_data_loader=None, plot=False)
     logging.info('LR finder suggestion: %f', newlr)
 
     return newlr
+
+
+def train_byol(model, hparams, loader):
+    byol = BYOL(model, image_size=(256, 256), hparams=hparams)
+
+    early_stopping = EarlyStopping('train_loss',
+                                   patience=hparams.early_stop_patience,
+                                   verbose=True)
+
+    trainer = Trainer.from_argparse_args(
+        hparams,
+        reload_dataloaders_every_epoch=True,
+        terminate_on_nan=True,
+        callbacks=[early_stopping],
+    )
+
+    if hparams.auto_lr_find:
+        new_lr = lr_find(trainer, byol, loader)
+        hparams.lr = new_lr
+        byol.hparams.lr = new_lr
+
+    trainer.fit(byol, loader, loader)
+    return byol

@@ -1,16 +1,11 @@
 import os
 from cassava.lmdb_dataset import dataset_to_lmdb
-import albumentations as A
-
-
-raw_transforms = A.Compose([
-    A.Resize(400, 400),
-])
+from cassava.transforms import lmdb_transforms
 
 
 def prepare_lmdb(train_images_torch, test_images_torch):
-    train_images_torch.transform = raw_transforms
-    test_images_torch.transform = raw_transforms
+    train_images_torch.transform = lmdb_transforms
+    test_images_torch.transform = lmdb_transforms
 
     train_lmdb_path = 'data/03_primary/train.lmdb'
     test_lmdb_path = 'data/03_primary/test.lmdb'

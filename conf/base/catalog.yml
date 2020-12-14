@@ -43,6 +43,11 @@ pretrained_model:
   filepath: data/06_models/pretrained_model.pt
   model: LeafDoctorModel
 
+finetuned_model:
+  type: cassava.extras.datasets.torch_model.TorchLocalModel
+  filepath: data/06_models/finetuned_model.pt
+  model: LeafDoctorModel
+
 model:
   type: cassava.extras.datasets.torch_model.TorchLocalModel
   filepath: data/06_models/model.pt
