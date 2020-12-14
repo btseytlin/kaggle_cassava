@@ -32,7 +32,7 @@ class ProjectHooks:
             "predict": predict_pipeline,
             "cv": cv_pipeline,
             "finetune": finetune_pipeline,
-            "__submit__": prepare_pipeline + finetune_pipeline + cv_pipeline + predict_pipeline,
+            "__submit__": prepare_pipeline + pretrain_pipeline + finetune_pipeline + train_pipeline + predict_pipeline,
             "__default__": cv_pipeline + predict_pipeline,
         }
 

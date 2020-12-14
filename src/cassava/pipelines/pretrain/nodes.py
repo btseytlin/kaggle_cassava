@@ -31,7 +31,7 @@ def pretrain_model(train_images_lmdb, parameters):
         logging.warning("Pretraining from checkpoint")
         model.load_state_dict(torch.load('data/06_models/pretrained_model.pt'))
 
-    byol = train_byol(model, hparams, loader)
+    byol = train_byol(model.trunk, hparams, loader)
 
     state_dict = byol.encoder.model.state_dict()
     model = LeafDoctorModel(classifier_params)
