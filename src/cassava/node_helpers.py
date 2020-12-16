@@ -1,4 +1,6 @@
 import logging
+from copy import deepcopy
+
 import torch
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import EarlyStopping
@@ -70,7 +72,6 @@ def lr_find(trainer, model, train_data_loader, val_data_loader=None, plot=False)
 
 def train_byol(model, hparams, loader):
     byol = BYOL(model, image_size=(256, 256), hparams=hparams)
-
     early_stopping = EarlyStopping('train_loss',
                                    patience=hparams.early_stop_patience,
                                    verbose=True)
@@ -83,7 +84,7 @@ def train_byol(model, hparams, loader):
     )
 
     if hparams.auto_lr_find:
-        new_lr = lr_find(trainer, byol, loader)
+        new_lr = lr_find(trainer, byol, loader, val_data_loader=loader)
         hparams.lr = new_lr
         byol.hparams.lr = new_lr
 

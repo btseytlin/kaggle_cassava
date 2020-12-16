@@ -16,7 +16,7 @@ def finetune_on_test(pretrained_model, train_images_lmdb, test_images_lmdb, para
                                          batch_size=parameters['byol']['batch_size'],
                                          num_workers=parameters['data_loader_workers'],
                                          shuffle=True)
-
+    classifier_params = Namespace(**parameters['classifier'])
     byol_params = dict(parameters['byol'])
     byol_test_overrides = dict(parameters['byol']['on_test'])
     byol_params.update(byol_test_overrides)
@@ -26,6 +26,6 @@ def finetune_on_test(pretrained_model, train_images_lmdb, test_images_lmdb, para
     byol = train_byol(pretrained_model.trunk, hparams, loader)
 
     state_dict = byol.encoder.model.state_dict()
-    model = LeafDoctorModel(Namespace(**parameters['classifier']))
+    model = LeafDoctorModel(classifier_params)
     model.trunk.load_state_dict(state_dict)
     return model

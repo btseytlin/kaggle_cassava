@@ -39,7 +39,7 @@ byol:
   from_checkpoint: 0
 
   on_test:
-    auto_lr_find: 1
+    auto_lr_find: 0
     max_epochs: 10
     early_stop_patience: 2
 

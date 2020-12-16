@@ -1,6 +1,6 @@
 import numpy as np
 from argparse import Namespace
-from copy import deepcopy
+from copy import deepcopy, copy
 from itertools import chain
 from typing import Dict, List
 import pytorch_lightning as pl
@@ -101,11 +101,22 @@ class EncoderWrapper(nn.Module):
         return self._encoded
 
 
+def deepcopy_encoder(encoder):
+    new_encoder = EncoderWrapper(
+            encoder.model, encoder.projection_size, encoder.hidden_size, layer=encoder.layer
+    )
+    # Create projector on new encoder
+    new_encoder._projector_dim = copy(encoder._projector_dim)
+    new_encoder.projector
+    new_encoder.load_state_dict(encoder.state_dict())
+    return new_encoder
+
+
 class BYOL(pl.LightningModule):
     def __init__(
         self,
         model: nn.Module,
-        image_size: Tuple[int, int] = (128, 128),
+        image_size: Tuple[int, int] = (256, 256),
         hidden_layer: Union[str, int] = -2,
         projection_size: int = 256,
         hidden_size: int = 4096,
@@ -131,7 +142,7 @@ class BYOL(pl.LightningModule):
     @property
     def target(self):
         if self._target is None:
-            self._target = deepcopy(self.encoder)
+            self._target = deepcopy_encoder(self.encoder)
         return self._target
 
     def update_target(self):
