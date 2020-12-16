@@ -26,10 +26,10 @@ classifier:
 byol:
   gpus: -1
   batch_size: 10
-  max_epochs: 100
+  max_epochs: 5
   max_steps: 0
   auto_lr_find: 0
-  lr: 0.01
+  lr: 0.0001
   reduce_lr_on_pleteau_patience: 1
   weight_decay: 0.0001
   limit_train_batches: 300

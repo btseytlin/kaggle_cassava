@@ -14,7 +14,7 @@ def create_pipeline(**kwargs):
             ),
             node(
                 train_model,
-                ["pretrained_model", "train_images_lmdb", "train_indices", "val_indices", "parameters"],
+                ["train_images_lmdb", "train_indices", "val_indices", "parameters"],
                 "model",
                 name='train_model',
             ),

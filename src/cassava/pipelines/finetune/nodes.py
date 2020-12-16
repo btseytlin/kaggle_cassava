@@ -14,7 +14,7 @@ from cassava.transforms import dummy_transforms
 from cassava.utils import DatasetFromSubset
 
 
-def pretrain_model(train_images_lmdb, test_images_lmdb, parameters):
+def finetune_model(model, train_images_lmdb, test_images_lmdb, parameters):
     train_dataset = DatasetFromSubset(
         torch.utils.data.Subset(train_images_lmdb, indices=list(range(len(train_images_lmdb)))),
         transform=dummy_transforms)
@@ -30,7 +30,6 @@ def pretrain_model(train_images_lmdb, test_images_lmdb, parameters):
                                         shuffle=True)
 
     classifier_params = Namespace(**parameters['classifier'])
-    model = LeafDoctorModel(classifier_params)
 
     hparams = Namespace(**parameters['byol'])
     byol = train_byol(model.trunk, hparams, loader)

@@ -7,7 +7,6 @@ from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 
 from cassava.models.model import LeafDoctorModel
-from cassava.models.byol import BYOL
 from cassava.transforms import get_train_transforms, get_test_transforms
 from cassava.utils import DatasetFromSubset
 from cassava.pipelines.predict.nodes import predict
@@ -23,7 +22,7 @@ def split_data(train_labels, parameters):
     return train_indices, val_indices
 
 
-def train_model(pretrained_model, train_images_lmdb, train_indices, val_indices, parameters):
+def train_model(train_images_lmdb, train_indices, val_indices, parameters):
     train_transform, val_transform = get_train_transforms(), get_test_transforms()
 
     train_dataset = DatasetFromSubset(torch.utils.data.Subset(train_images_lmdb, indices=train_indices),
@@ -55,6 +54,7 @@ def train_model(pretrained_model, train_images_lmdb, train_indices, val_indices,
                                    )
 
     hparams = Namespace(**parameters['classifier'])
+    model = LeafDoctorModel(hparams)
 
     trainer = Trainer.from_argparse_args(
         hparams,
@@ -62,10 +62,6 @@ def train_model(pretrained_model, train_images_lmdb, train_indices, val_indices,
         terminate_on_nan=True,
         callbacks=[model_checkpoint, early_stopping],
     )
-
-    # Model
-    model = LeafDoctorModel(hparams)
-    model.load_state_dict(pretrained_model.state_dict())
 
     # Training
     trainer.fit(model, train_data_loader, val_data_loader)
