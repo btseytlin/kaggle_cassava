@@ -10,8 +10,10 @@ data_loader_workers: 6
 classifier:
   gpus: -1
   batch_size: 10
+  accumulate_grad_batches: 2
   max_epochs: 100
   max_steps: 0
+  limit_train_batches: 1000
   auto_lr_find: 0
   lr: 0.001
   weight_decay: 0.0001
@@ -26,7 +28,7 @@ byol:
   batch_size: 10
   max_epochs: 100
   max_steps: 0
-  auto_lr_find: 1
+  auto_lr_find: 0
   lr: 0.01
   reduce_lr_on_pleteau_patience: 1
   weight_decay: 0.0001
@@ -34,7 +36,4 @@ byol:
   limit_val_batches: 1
   accumulate_grad_batches: 4
   early_stop_patience: 3
-  from_checkpoint: 0
-
-  #limit_train_batches: 2
 

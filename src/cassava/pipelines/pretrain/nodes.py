@@ -11,12 +11,19 @@ from cassava.models.byol import BYOL
 from cassava.node_helpers import lr_find, train_byol
 
 from cassava.transforms import dummy_transforms
+from cassava.utils import DatasetFromSubset
 
 
 def pretrain_model(train_images_lmdb, test_images_lmdb, parameters):
-    train_images_lmdb.transform = dummy_transforms
-    test_images_lmdb.transform = dummy_transforms
-    dataset = torch.utils.data.ConcatDataset([train_images_lmdb, test_images_lmdb])
+    train_dataset = DatasetFromSubset(
+        torch.utils.data.Subset(train_images_lmdb, indices=list(range(len(train_images_lmdb)))),
+        transform=dummy_transforms)
+
+    test_dataset = DatasetFromSubset(
+        torch.utils.data.Subset(test_images_lmdb, indices=list(range(len(test_images_lmdb)))),
+        transform=dummy_transforms)
+
+    dataset = torch.utils.data.ConcatDataset([train_dataset, test_dataset])
     loader = torch.utils.data.DataLoader(dataset,
                                         batch_size=parameters['byol']['batch_size'],
                                         num_workers=parameters['data_loader_workers'],
