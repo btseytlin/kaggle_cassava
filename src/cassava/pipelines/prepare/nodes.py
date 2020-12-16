@@ -14,6 +14,7 @@ def prepare_lmdb(train_images_torch, test_images_torch):
             os.path.exists(test_lmdb_path)]):
         raise Exception('LMDB files lready exist, delete manually to overwrite.')
 
-    dataset_to_lmdb(train_images_torch, train_lmdb_path)
-    dataset_to_lmdb(test_images_torch, test_lmdb_path)
+    train_images_lmdb = dataset_to_lmdb(train_images_torch, train_lmdb_path)
+    test_images_lmdb = dataset_to_lmdb(test_images_torch, test_lmdb_path)
 
+    return train_images_lmdb, test_images_lmdb

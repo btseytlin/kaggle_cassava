@@ -2,7 +2,7 @@ import logging
 from argparse import Namespace
 from sklearn.model_selection import train_test_split
 import torch
-
+import numpy as np
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 
@@ -23,7 +23,7 @@ def split_data(train_labels, parameters):
     return train_indices, val_indices
 
 
-def train_model(finetuned_model, train_images_lmdb, train_indices, val_indices, parameters):
+def train_model(pretrained_model, train_images_lmdb, train_indices, val_indices, parameters):
     train_transform, val_transform = get_train_transforms(), get_test_transforms()
 
     train_dataset = DatasetFromSubset(torch.utils.data.Subset(train_images_lmdb, indices=train_indices),
@@ -43,6 +43,7 @@ def train_model(finetuned_model, train_images_lmdb, train_indices, val_indices, 
 
     # Callbacks
     model_checkpoint = ModelCheckpoint(monitor="val_acc",
+                                       mode='max',
                                        verbose=True,
                                        dirpath=parameters['classifier']['checkpoints_dir'],
                                        filename="{epoch}_{val_acc:.4f}",
@@ -50,6 +51,7 @@ def train_model(finetuned_model, train_images_lmdb, train_indices, val_indices, 
     early_stopping = EarlyStopping('val_acc',
                                    patience=parameters['classifier']['early_stop_patience'],
                                    verbose=True,
+                                   mode='max',
                                    )
 
     hparams = Namespace(**parameters['classifier'])
@@ -63,7 +65,7 @@ def train_model(finetuned_model, train_images_lmdb, train_indices, val_indices, 
 
     # Model
     model = LeafDoctorModel(hparams)
-    model.load_state_dict(finetuned_model.state_dict())
+    model.load_state_dict(pretrained_model.state_dict())
 
     # Training
     trainer.fit(model, train_data_loader, val_data_loader)
@@ -75,13 +77,13 @@ def train_model(finetuned_model, train_images_lmdb, train_indices, val_indices, 
     return model
 
 
-def score_model(model, train_images_torch, indices, parameters):
+def score_model(model, train_images_lmdb, indices, parameters):
     logging.info('Scoring model')
     if parameters['classifier'].get('limit_val_batches'):
         indices = indices[:parameters['classifier']['limit_val_batches']*parameters['classifier']['batch_size']]
-    labels = train_images_torch.labels[indices]
+    labels = np.array(train_images_lmdb.labels)[indices]
     predictions, probas = predict(model,
-                          dataset=train_images_torch,
+                          dataset=train_images_lmdb,
                           indices=indices,
                           batch_size=parameters['classifier']['batch_size'],
                           num_workers=parameters['data_loader_workers'],

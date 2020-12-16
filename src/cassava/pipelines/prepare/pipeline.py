@@ -9,7 +9,7 @@ def create_pipeline(**kwargs):
             node(
                 prepare_lmdb,
                 ["train_images_torch", "test_images_torch"],
-                None,
+                ["train_images_lmdb", "test_images_lmdb"],
                 name="prepare_lmdb"
             ),
         ]

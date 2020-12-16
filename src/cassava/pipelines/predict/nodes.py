@@ -13,14 +13,11 @@ from cassava.node_helpers import predict
 
 def predict_submission(model, test_images_lmdb, sample_submission, parameters):
     logging.debug('Predicting with model')
-    test_images_lmdb.transform = get_test_transforms()
-
     predictions, probas = predict(model,
                                   dataset=test_images_lmdb,
                                   indices=list(range(len(test_images_lmdb))),
                                   batch_size=parameters['classifier']['batch_size'],
-                                  num_workers=parameters['data_loader_workers'],
-                                  transform=get_test_transforms())
+                                  num_workers=parameters['data_loader_workers'])
 
     sample_submission.label = predictions
 

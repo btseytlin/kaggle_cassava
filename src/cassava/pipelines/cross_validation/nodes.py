@@ -8,7 +8,7 @@ from sklearn.model_selection import StratifiedKFold
 from cassava.pipelines.train_model.nodes import train_model, score_model
 
 
-def cross_validation(finetuned_model, train_images_lmdb, test_images_lmdb, parameters):
+def cross_validation(pretrained_model, train_images_lmdb, test_images_lmdb, parameters):
     cv_results = {}
     score_values = {}
 
@@ -24,7 +24,7 @@ def cross_validation(finetuned_model, train_images_lmdb, test_images_lmdb, param
         logging.info('Fitting CV fold %d', fold_num)
         model_path = os.path.join(parameters['cv_models_dir'], f'model_fold_{fold_num}.pt')
         fold_parameters = copy(parameters)
-        model = train_model(finetuned_model, train_images_lmdb, train_idx, val_idx, fold_parameters)
+        model = train_model(pretrained_model, train_images_lmdb, train_idx, val_idx, fold_parameters)
         torch.save(model.state_dict(), model_path)
         scores, oof_predictions = score_model(model, train_images_lmdb, val_idx, fold_parameters)
         cv_results[f'fold_{fold_num}'] = {

@@ -101,17 +101,6 @@ class EncoderWrapper(nn.Module):
         return self._encoded
 
 
-def deepcopy_encoder(encoder):
-    new_encoder = EncoderWrapper(
-            encoder.model, encoder.projection_size, encoder.hidden_size, layer=encoder.layer
-    )
-    # Create projector on new encoder
-    new_encoder._projector_dim = copy(encoder._projector_dim)
-    new_encoder.projector
-    new_encoder.load_state_dict(encoder.state_dict())
-    return new_encoder
-
-
 class BYOL(pl.LightningModule):
     def __init__(
         self,
@@ -142,7 +131,7 @@ class BYOL(pl.LightningModule):
     @property
     def target(self):
         if self._target is None:
-            self._target = deepcopy_encoder(self.encoder)
+            self._target = deepcopy(self.encoder)
         return self._target
 
     def update_target(self):
@@ -174,10 +163,6 @@ class BYOL(pl.LightningModule):
 
         self.log("train_loss", loss.item())
         return {"loss": loss}
-
-    def train_epoch_end(self, outputs):
-        train_loss = sum(x["loss"] for x in outputs) / len(outputs)
-        self.log("train_loss", train_loss.item())
 
     @torch.no_grad()
     def validation_step(self, batch, *_) -> Dict[str, Union[Tensor, Dict]]:

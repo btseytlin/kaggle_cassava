@@ -10,13 +10,13 @@ def create_pipeline(**kwargs):
                 split_data,
                 ["train_labels", "parameters"],
                 ["train_indices", "val_indices"],
-                name='split',
+                name='split_data',
             ),
             node(
                 train_model,
-                ["finetuned_model", "train_images_lmdb", "train_indices", "val_indices", "parameters"],
+                ["pretrained_model", "train_images_lmdb", "train_indices", "val_indices", "parameters"],
                 "model",
-                name='train',
+                name='train_model',
             ),
             node(
                 score_model,
