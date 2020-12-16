@@ -31,7 +31,7 @@ class RandomApply(nn.Module):
         return x if random.random() > self.p else self.fn(x)
 
 
-def default_augmentation(image_size: Tuple[int, int] = (224, 224)) -> nn.Module:
+def default_augmentation(image_size: Tuple[int, int] = (256, 256)) -> nn.Module:
     return nn.Sequential(
         tf.Resize(size=image_size),
         aug.ColorJitter(contrast=0.1, brightness=0.1, saturation=0.1, p=0.8),

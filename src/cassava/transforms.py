@@ -15,7 +15,7 @@ lmdb_transforms = A.Compose([
 
 def get_train_transforms():
     return A.Compose([
-        A.HueSaturationValue(hue_shift_limit=5, sat_shift_limit=5, val_shift_limit=5, p=1),
+        A.HueSaturationValue(hue_shift_limit=5, sat_shift_limit=5, val_shift_limit=5, p=0.5),
         A.ToFloat(max_value=1.0),
         A.RandomResizedCrop(256, 256, scale=(0.3, 0.9)),
         A.HorizontalFlip(p=0.5),
