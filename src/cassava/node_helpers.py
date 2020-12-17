@@ -72,6 +72,7 @@ def train_byol(model, hparams, loader):
     byol = BYOL(model, image_size=(256, 256), hparams=hparams)
 
     early_stopping = EarlyStopping('train_loss',
+                                   mode='min',
                                    patience=hparams.early_stop_patience,
                                    verbose=True)
 
