@@ -19,6 +19,7 @@ classifier:
   reduce_lr_on_pleteau_patience: 2
   save_top_k_checkpoints: 1
   checkpoints_dir: data/06_models/classifier/checkpoints
+  limit_train_batches: 1000
 
   #limit_val_batches: 2
   #limit_train_batches: 2

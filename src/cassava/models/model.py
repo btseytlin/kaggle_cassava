@@ -15,6 +15,10 @@ class LeafDoctorModel(pl.LightningModule):
 
         self.trunk = timm.create_model('efficientnet_b0', pretrained=True, num_classes=5)
 
+        for layer in [self.trunk.bn1, self.trunk.bn2]:
+            for param in layer.parameters():
+                param.requires_grad = False
+
     def forward(self, x):
         return self.trunk(x)
 
@@ -26,7 +30,7 @@ class LeafDoctorModel(pl.LightningModule):
         return torch.max(self.forward(x), 1)[1]
 
     def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(self.parameters(),
+        optimizer = torch.optim.AdamW(filter(lambda p: p.requires_grad, self.parameters()),
                                       lr=self.hparams.lr or self.hparams.learning_rate,
                                       weight_decay=self.hparams.weight_decay)
         lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,

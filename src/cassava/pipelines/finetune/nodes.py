@@ -23,6 +23,10 @@ def finetune_on_test(pretrained_model, train_images_lmdb, test_images_lmdb, para
 
     hparams = Namespace(**byol_params)
 
+    state_dict = pretrained_model.state_dict()
+    model = LeafDoctorModel(Namespace(**parameters['classifier']))
+    model.load_state_dict(state_dict)
+
     byol = train_byol(pretrained_model.trunk, hparams, loader)
 
     state_dict = byol.encoder.model.state_dict()
