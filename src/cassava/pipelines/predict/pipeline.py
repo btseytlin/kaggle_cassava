@@ -8,7 +8,7 @@ def create_pipeline(**kwargs):
         [
             node(
                 predict_submission,
-                ["cv_results", "test_images_torch", "sample_submission", "parameters"],
+                ["cv_results", "test_images_lmdb", "sample_submission", "parameters"],
                 "submission",
                 name='predict',
             ),

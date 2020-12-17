@@ -31,14 +31,14 @@ class RandomApply(nn.Module):
         return x if random.random() > self.p else self.fn(x)
 
 
-def default_augmentation(image_size: Tuple[int, int] = (224, 224)) -> nn.Module:
+def default_augmentation(image_size: Tuple[int, int] = (256, 256)) -> nn.Module:
     return nn.Sequential(
         tf.Resize(size=image_size),
-        RandomApply(aug.ColorJitter(0.2, 0.2, 0.2, 0.2), p=0.8),
+        aug.ColorJitter(contrast=0.1, brightness=0.1, saturation=0.1, p=0.8),
         aug.RandomVerticalFlip(),
         aug.RandomHorizontalFlip(),
-        RandomApply(filters.GaussianBlur2d((3, 3), (1.0, 1.0)), p=0.1),
-        aug.RandomResizedCrop(size=image_size, scale=(0.3, 0.7)),
+        RandomApply(filters.GaussianBlur2d((3, 3), (0.5, 0.5)), p=0.1),
+        aug.RandomResizedCrop(size=image_size, scale=(0.5, 1)),
         aug.Normalize(
             mean=torch.tensor([0.485, 0.456, 0.406]),
             std=torch.tensor([0.229, 0.224, 0.225]),
@@ -105,7 +105,7 @@ class BYOL(pl.LightningModule):
     def __init__(
         self,
         model: nn.Module,
-        image_size: Tuple[int, int] = (128, 128),
+        image_size: Tuple[int, int] = (256, 256),
         hidden_layer: Union[str, int] = -2,
         projection_size: int = 256,
         hidden_size: int = 4096,
@@ -163,10 +163,6 @@ class BYOL(pl.LightningModule):
 
         self.log("train_loss", loss.item())
         return {"loss": loss}
-
-    def train_epoch_end(self, outputs):
-        train_loss = sum(x["loss"] for x in outputs) / len(outputs)
-        self.log("train_loss", train_loss.item())
 
     @torch.no_grad()
     def validation_step(self, batch, *_) -> Dict[str, Union[Tensor, Dict]]:

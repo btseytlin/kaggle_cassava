@@ -8,7 +8,7 @@ from sklearn.model_selection import StratifiedKFold
 from cassava.pipelines.train_model.nodes import train_model, score_model
 
 
-def cross_validation(finetuned_model, train_images_lmdb, test_images_lmdb, parameters):
+def cross_validation(finetuned_model, train_images_lmdb, parameters):
     cv_results = {}
     score_values = {}
 

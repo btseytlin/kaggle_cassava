@@ -49,7 +49,7 @@ class KedroImageLMDBDataSet(AbstractDataSet):
 
     def _save(self, vision_dataset) -> None:
         """ Not Implemented """
-        raise NotImplementedError()
+        pass
 
     def _describe(self) -> Dict[str, Any]:
         return dict(

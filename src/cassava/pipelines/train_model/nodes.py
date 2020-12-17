@@ -2,7 +2,7 @@ import logging
 from argparse import Namespace
 from sklearn.model_selection import train_test_split
 import torch
-
+import numpy as np
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 
@@ -77,13 +77,13 @@ def train_model(finetuned_model, train_images_lmdb, train_indices, val_indices, 
     return model
 
 
-def score_model(model, train_images_torch, indices, parameters):
+def score_model(model, train_images_lmdb, indices, parameters):
     logging.info('Scoring model')
     if parameters['classifier'].get('limit_val_batches'):
         indices = indices[:parameters['classifier']['limit_val_batches']*parameters['classifier']['batch_size']]
-    labels = train_images_torch.labels[indices]
+    labels = np.array(train_images_lmdb.labels)[indices]
     predictions, probas = predict(model,
-                          dataset=train_images_torch,
+                          dataset=train_images_lmdb,
                           indices=indices,
                           batch_size=parameters['classifier']['batch_size'],
                           num_workers=parameters['data_loader_workers'],

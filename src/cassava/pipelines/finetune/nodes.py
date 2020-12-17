@@ -9,8 +9,6 @@ from cassava.transforms import dummy_transforms
 
 
 def finetune_on_test(pretrained_model, train_images_lmdb, test_images_lmdb, parameters):
-    train_images_lmdb.transform = dummy_transforms
-    test_images_lmdb.transform = dummy_transforms
     dataset = torch.utils.data.ConcatDataset([train_images_lmdb, test_images_lmdb])
     loader = torch.utils.data.DataLoader(dataset,
                                          batch_size=parameters['byol']['batch_size'],

@@ -1,15 +1,10 @@
 import logging
 import os
-from PIL import Image
-import six
-
+import numpy as np
 from torch.utils.data import DataLoader
-
 import lmdb
 from tqdm.auto import tqdm
 import pyarrow as pa
-import lz4framed
-
 import torch.utils.data as data
 
 
@@ -36,7 +31,7 @@ class ImageLMDBDataset(data.Dataset):
         with self.env.begin(write=False) as txn:
             self.length = deserialize_decompress(txn.get(b'__len__'))
             self.keys = deserialize_decompress(txn.get(b'__keys__'))
-            self.labels = deserialize_decompress(txn.get(b'labels'))
+            self.labels = np.array(deserialize_decompress(txn.get(b'labels')))
 
         self.transform = transform
         self.target_transform = target_transform
