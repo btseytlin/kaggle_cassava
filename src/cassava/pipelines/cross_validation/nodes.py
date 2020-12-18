@@ -43,8 +43,14 @@ def cross_validation(train_images_lmdb, parameters):
         # Finetune on test
         finetuned_model = finetune_on_test(pretrained_model, fold_train_dataset, fold_test_dataset, fold_parameters)
 
-        # Train
+        # Split
         train_idx, val_idx = split_data(train_labels, fold_parameters)
+
+        # Assert no leakage of test into train
+        assert not bool(train_idx.intersection(set(val_idx)))
+        assert not bool(set(train_idx).union(set(val_idx)).intersection(set(test_idx)))
+
+        # Train
         model = train_model(finetuned_model, fold_train_dataset, train_idx, val_idx, fold_parameters)
 
         torch.save(model.state_dict(), model_path)
