@@ -61,6 +61,8 @@ def train_model(finetuned_model, train_images_lmdb, train_indices, val_indices, 
         reload_dataloaders_every_epoch = True,
         terminate_on_nan=True,
         callbacks=[model_checkpoint, early_stopping],
+        precision=hparams.precision,
+        amp_level=hparams.amp_level,
     )
 
     # Model

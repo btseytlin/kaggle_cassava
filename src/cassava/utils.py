@@ -152,6 +152,10 @@ class DatasetFromSubset(Dataset):
             x = self.transform(image=x)['image']
         return x, y
 
+    @property
+    def labels(self):
+        return self.subset.dataset.labels[self.subset.indices]
+
     def __len__(self):
         return len(self.subset)
 

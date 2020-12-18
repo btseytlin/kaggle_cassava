@@ -81,6 +81,8 @@ def train_byol(model, hparams, loader):
         reload_dataloaders_every_epoch=True,
         terminate_on_nan=True,
         callbacks=[early_stopping],
+        precision=hparams.precision,
+        amp_level=hparams.amp_level,
     )
 
     if hparams.auto_lr_find:

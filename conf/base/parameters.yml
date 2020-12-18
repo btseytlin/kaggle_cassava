@@ -9,8 +9,7 @@ data_loader_workers: 6
 
 classifier:
   gpus: -1
-  batch_size: 10
-  accumulate_grad_batches: 2
+  batch_size: 40
   max_epochs: 100
   max_steps: 0
   auto_lr_find: 0
@@ -21,6 +20,9 @@ classifier:
   save_top_k_checkpoints: 1
   checkpoints_dir: data/06_models/classifier/checkpoints
   limit_train_batches: 1000
+
+  amp_level: 'O2'
+  precision: 16
 
 byol:
   gpus: -1
@@ -35,7 +37,9 @@ byol:
   limit_train_batches: 300
   limit_val_batches: 1
   early_stop_patience: 3
-  from_checkpoint: 0
+
+  amp_level: '02'
+  precision: 32
 
   on_test:
     lr: 0.0001
