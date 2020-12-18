@@ -29,7 +29,7 @@ byol:
   max_epochs: 100
   max_steps: 0
   auto_lr_find: 0
-  lr: 0.01
+  lr: 0.001
   reduce_lr_on_pleteau_patience: 1
   weight_decay: 0.0001
   limit_train_batches: 300
@@ -38,9 +38,10 @@ byol:
   from_checkpoint: 0
 
   on_test:
-    auto_lr_find: 1
-    max_epochs: 10
-    early_stop_patience: 2
+    lr: 0.0001
+    auto_lr_find: 0
+    max_epochs: 5
+    early_stop_patience: 1
 
   #limit_train_batches: 2
 
