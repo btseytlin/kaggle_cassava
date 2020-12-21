@@ -5,7 +5,7 @@ import torch
 from cassava.models.model import LeafDoctorModel
 from cassava.node_helpers import lr_find, train_byol
 
-from cassava.transforms import dummy_transforms
+from cassava.transforms import byol_transforms
 from cassava.utils import DatasetFromSubset
 
 
@@ -13,7 +13,7 @@ def finetune_on_test(pretrained_model, train_images_lmdb, test_images_lmdb, para
     dataset = torch.utils.data.ConcatDataset([train_images_lmdb, test_images_lmdb])
     dataset = DatasetFromSubset(
         torch.utils.data.Subset(dataset, indices=list(range(len(dataset)))),
-        transform = dummy_transforms)
+        transform = byol_transforms)
     loader = torch.utils.data.DataLoader(dataset,
                                          batch_size=parameters['byol']['batch_size'],
                                          num_workers=parameters['data_loader_workers'],

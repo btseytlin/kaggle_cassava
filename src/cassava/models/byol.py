@@ -4,6 +4,7 @@ from copy import deepcopy
 from itertools import chain
 from typing import Dict, List
 import pytorch_lightning as pl
+from albumentations.pytorch import ToTensorV2
 from torch import optim
 import torch.nn.functional as f
 import random
@@ -13,6 +14,7 @@ from kornia import filters
 from kornia.geometry import transform as tf
 import torch
 from torch import nn, Tensor
+import albumentations as A
 
 
 def normalized_mse(x: Tensor, y: Tensor) -> Tensor:
@@ -31,9 +33,8 @@ class RandomApply(nn.Module):
         return x if random.random() > self.p else self.fn(x)
 
 
-def default_augmentation(image_size: Tuple[int, int] = (256, 256)) -> nn.Module:
+def default_aug(image_size: Tuple[int, int] = (256, 256)) -> nn.Module:
     return nn.Sequential(
-        tf.Resize(size=image_size),
         aug.ColorJitter(contrast=0.1, brightness=0.1, saturation=0.1, p=0.8),
         aug.RandomVerticalFlip(),
         aug.RandomHorizontalFlip(),
@@ -114,7 +115,7 @@ class BYOL(pl.LightningModule):
         hparams = None,
     ):
         super().__init__()
-        self.augment = default_augmentation(image_size) if augment_fn is None else augment_fn
+        self._augment = default_aug(image_size) if augment_fn is None else augment_fn
         self.beta = beta
         self.encoder = EncoderWrapper(
             model, projection_size, hidden_size, layer=hidden_layer
@@ -124,6 +125,11 @@ class BYOL(pl.LightningModule):
         self._target = None
 
         self.encoder(torch.zeros(2, 3, *image_size))
+
+    def augment(self, batch):
+        if self.hparams.precision == 16:
+            return self._augment(batch.double()).to(torch.float16)
+        return self._augment(batch)
 
     def forward(self, x: Tensor) -> Tensor:
         return self.predictor(self.encoder(x))

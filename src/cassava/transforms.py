@@ -2,7 +2,8 @@ import albumentations as A
 from albumentations.pytorch import ToTensorV2
 from torchvision import transforms
 
-dummy_transforms = A.Compose([
+byol_transforms = A.Compose([
+    A.Resize(256, 256),
     A.ToFloat(max_value=1.0),
     ToTensorV2(),
 ])
