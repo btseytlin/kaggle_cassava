@@ -9,7 +9,7 @@ data_loader_workers: 6
 
 classifier:
   gpus: -1
-  batch_size: 40
+  batch_size: 32
   max_epochs: 100
   max_steps: 0
   auto_lr_find: 0
@@ -26,7 +26,7 @@ classifier:
 
 byol:
   gpus: -1
-  batch_size: 10
+  batch_size: 8
   accumulate_grad_batches: 2
   max_epochs: 100
   max_steps: 0
