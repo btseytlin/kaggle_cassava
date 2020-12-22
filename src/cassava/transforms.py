@@ -9,7 +9,7 @@ byol_transforms = A.Compose([
 ])
 
 lmdb_transforms = A.Compose([
-    A.Resize(400, 400),
+    A.Resize(512, 512),
 ])
 
 

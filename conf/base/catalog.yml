@@ -1,3 +1,5 @@
+# 2020 data
+
 train_labels:
   type: pandas.CSVDataSet
   filepath: data/01_raw/train.csv
@@ -11,32 +13,63 @@ label_num_to_disease_map:
   filepath: data/01_raw/label_num_to_disease_map.json
   load_args:
     orient: "index"
-  
-train_images:
-  type: PartitionedDataSet
-  dataset: kedro.extras.datasets.pillow.ImageDataSet
-  path: data/01_raw/train_images
-  filename_suffix: ".jpg"
 
-train_images_torch:
-  type: cassava.extras.datasets.image_dataset.ImageFolderDataSet
+train_images_torch_2020:
+  type: cassava.extras.datasets.image_dataset.ImageOneFolderDataSet
   filepath: data/01_raw
   labels_path: train.csv
   images_path: train_images
 
-test_images_torch:
-  type: cassava.extras.datasets.image_dataset.ImageFolderDataSet
+test_images_torch_2020:
+  type: cassava.extras.datasets.image_dataset.ImageOneFolderDataSet
   filepath: data/01_raw
   labels_path: sample_submission.csv
   images_path: test_images
 
-train_images_lmdb:
-  type: cassava.extras.datasets.lmdb_dataset.KedroImageLMDBDataSet
-  filepath: data/03_primary/train.lmdb
+# 2019 data
 
-test_images_lmdb:
+train_images_torch_2019:
+  type: cassava.extras.datasets.image_dataset.ImageFolderDataSet
+  filepath: data/01_raw/2019/train
+
+test_images_torch_2019:
+  type: cassava.extras.datasets.image_dataset.ImageFolderDataSet
+  filepath: data/01_raw/2019/test
+
+extra_images_torch_2019:
+  type: cassava.extras.datasets.image_dataset.ImageFolderDataSet
+  filepath: data/01_raw/2019/extraimages
+
+# Intermediate
+image_ids:
+  type: pandas.CSVDataSet
+  filepath: data/02_intermediate/image_ids.csv
+
+image_hashes:
+  type: pandas.CSVDataSet
+  filepath: data/02_intermediate/image_hashes.csv
+
+
+duplicates:
+  type: pandas.CSVDataSet
+  filepath: data/02_intermediate/duplicates.csv
+
+
+# Primary data
+
+train_lmdb:
+  type: cassava.extras.datasets.lmdb_dataset.KedroImageLMDBDataSet
+  filepath: /data/cassava_extra_data/data/03_primary/train.lmdb
+
+unlabelled_lmdb:
+  type: cassava.extras.datasets.lmdb_dataset.KedroImageLMDBDataSet
+  filepath: /data/cassava_extra_data/data/03_primary/unlabelled.lmdb
+
+test_lmdb:
   type: cassava.extras.datasets.lmdb_dataset.KedroImageLMDBDataSet
   filepath: data/03_primary/test.lmdb
+
+# Models
 
 pretrained_model:
   type: cassava.extras.datasets.torch_model.TorchLocalModel
@@ -53,6 +86,8 @@ model:
   filepath: data/06_models/model.pt
   model: LeafDoctorModel
 
+# Reports
+
 train_metrics:
   type: kedro.extras.datasets.pickle.PickleDataSet
   filepath: data/08_reporting/train_metrics.pkl
@@ -61,10 +96,14 @@ val_scores:
   type: kedro.extras.datasets.pickle.PickleDataSet
   filepath: data/08_reporting/val_scores.pkl
 
+cv_results:
+  type: kedro.extras.datasets.pickle.PickleDataSet
+  filepath: data/08_reporting/cv_results.pkl
+
+# Submission
+
 submission:
   type: pandas.CSVDataSet
   filepath: data/07_model_output/submission.csv
 
-cv_results:
-  type: kedro.extras.datasets.pickle.PickleDataSet
-  filepath: data/08_reporting/cv_results.pkl
+

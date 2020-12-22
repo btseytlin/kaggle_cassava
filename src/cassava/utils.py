@@ -142,14 +142,18 @@ def plot_label_examples(dataset, targets, target_label):
 
 
 class DatasetFromSubset(Dataset):
-    def __init__(self, subset, transform=None):
+    def __init__(self, subset, transform=None, target_transform=None):
         self.subset = subset
         self.transform = transform
+        self.target_transform = target_transform
 
     def __getitem__(self, index):
         x, y = self.subset[index]
         if self.transform:
-            x = self.transform(image=x)['image']
+            x = self.transform(image=np.array(x))['image']
+
+        if self.target_transform:
+            y = self.target_transform(y)
         return x, y
 
     @property

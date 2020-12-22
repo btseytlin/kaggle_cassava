@@ -32,6 +32,7 @@ class ImageLMDBDataset(data.Dataset):
             self.length = deserialize_decompress(txn.get(b'__len__'))
             self.keys = deserialize_decompress(txn.get(b'__keys__'))
             self.labels = np.array(deserialize_decompress(txn.get(b'labels')))
+            self.sources = np.array(deserialize_decompress(txn.get(b'sources')))
 
         self.transform = transform
         self.target_transform = target_transform
@@ -56,23 +57,23 @@ class ImageLMDBDataset(data.Dataset):
         return self.__class__.__name__ + ' (' + self.db_path + ')'
 
 
-def dataset_to_lmdb(dataset, out_path, write_frequency=2000, num_workers=8, map_size=1e11):
+def dataset_to_lmdb(dataset, sources, out_path, write_frequency=4000, num_workers=8, map_size=1e11):
     dataset.loader = raw_reader
-    data_loader = DataLoader(dataset, num_workers=num_workers, collate_fn=lambda x: x)
+    data_loader = DataLoader(dataset, batch_size=None, num_workers=num_workers, collate_fn=lambda x: x)
 
     lmdb_path = out_path
     isdir = os.path.isdir(lmdb_path)
 
-    logging.debug("Generate LMDB to %s" % lmdb_path)
+    logging.info("Generate LMDB to %s" % lmdb_path)
     db = lmdb.open(lmdb_path, subdir=isdir,
                            map_size=map_size, readonly=False,
                            meminit=False, map_async=True)
 
     labels = []
-    logging.debug(len(dataset), len(data_loader))
+
     txn = db.begin(write=True)
     for idx, data in tqdm(enumerate(data_loader), total=len(data_loader)):
-        image, label = data[0]
+        image, label = data
         txn.put(u'{}'.format(idx).encode('ascii'), compress_serialize((image, label)))
         if idx % write_frequency == 0:
             txn.commit()
@@ -80,17 +81,18 @@ def dataset_to_lmdb(dataset, out_path, write_frequency=2000, num_workers=8, map_
         labels.append(int(label))
 
     # finish iterating through dataset
-    logging.debug('Final commit')
+    logging.info('Final commit')
     txn.commit()
 
-    logging.debug('Writing keys and len')
+    logging.info('Writing keys and len')
     keys = [u'{}'.format(k).encode('ascii') for k in range(idx + 1)]
     with db.begin(write=True) as txn:
         txn.put(b'__keys__', compress_serialize(keys))
         txn.put(b'__len__', compress_serialize(len(keys)))
         txn.put(b'labels', compress_serialize(list(labels)))
+        txn.put(b'sources', compress_serialize(list(sources)))
 
-    logging.debug("Flushing database ...")
+    logging.info("Flushing database ...")
     db.sync()
     db.close()
 

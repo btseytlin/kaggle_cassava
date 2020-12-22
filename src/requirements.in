@@ -21,3 +21,4 @@ timm
 pytorch-lightning
 kornia
 lmdb
+imagehash
