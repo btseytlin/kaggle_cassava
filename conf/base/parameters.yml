@@ -49,3 +49,5 @@ byol:
 
   #limit_train_batches: 2
 
+eval:
+  batch_size: 10

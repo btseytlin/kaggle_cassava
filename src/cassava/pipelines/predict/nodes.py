@@ -24,7 +24,7 @@ def predict_submission(cv_results, test_images_lmdb, sample_submission, paramete
         predictions, probas = predict(model,
                                   dataset=test_images_lmdb,
                                   indices=list(range(len(test_images_lmdb))),
-                                  batch_size=parameters['classifier']['batch_size'],
+                                  batch_size=parameters['eval']['batch_size'],
                                   num_workers=parameters['data_loader_workers'],
                                   transform=get_test_transforms())
 

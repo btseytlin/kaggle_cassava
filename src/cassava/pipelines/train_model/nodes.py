@@ -87,7 +87,7 @@ def score_model(model, train_images_lmdb, indices, parameters):
     predictions, probas = predict(model,
                           dataset=train_images_lmdb,
                           indices=indices,
-                          batch_size=parameters['classifier']['batch_size'],
+                          batch_size=parameters['eval']['batch_size'],
                           num_workers=parameters['data_loader_workers'],
                           transform=get_test_transforms())
 
