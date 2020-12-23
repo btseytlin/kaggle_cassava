@@ -2,6 +2,7 @@ import logging
 import torch
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import EarlyStopping
+from torch.utils.data import Subset, DataLoader
 from tqdm.auto import tqdm
 from sklearn.metrics import accuracy_score, f1_score
 
@@ -21,14 +22,14 @@ def score(predictions, labels):
 def predict(model, dataset, indices, batch_size=10, num_workers=4, transform=None):
     transform = transform or get_test_transforms()
     dataset = DatasetFromSubset(
-        torch.utils.data.Subset(dataset, indices=indices),
+        Subset(dataset, indices=indices),
         transform=transform)
 
-    loader = torch.utils.data.DataLoader(dataset,
-                                         batch_size=batch_size,
-                                         num_workers=num_workers,
-                                         shuffle=False,
-                                         drop_last=False)
+    loader = DataLoader(dataset,
+                        batch_size=batch_size,
+                        num_workers=num_workers,
+                        shuffle=False,
+                        drop_last=False)
 
     predictions = []
     probas = []
