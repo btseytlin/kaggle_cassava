@@ -14,22 +14,23 @@ from cassava.pipelines.predict.nodes import predict
 from cassava.node_helpers import score
 
 
-def split_data(train_labels, parameters):
+def split_data(train_lmdb, parameters):
     """Splits trainig data into the train and validation set"""
-    train_indices, val_indices = train_test_split(range(len(train_labels)),
-                     stratify=train_labels.label,
+    labels = train_lmdb.labels
+    train_indices, val_indices = train_test_split(range(len(labels)),
+                     stratify=labels,
                      random_state=parameters['seed'],
                      test_size=parameters['validation_size'])
     return train_indices, val_indices
 
 
-def train_model(finetuned_model, train_images_lmdb, train_indices, val_indices, parameters):
+def train_model(finetuned_model, train_lmdb, train_indices, val_indices, parameters):
     train_transform, val_transform = get_train_transforms(), get_test_transforms()
 
-    train_dataset = DatasetFromSubset(torch.utils.data.Subset(train_images_lmdb, indices=train_indices),
+    train_dataset = DatasetFromSubset(torch.utils.data.Subset(train_lmdb, indices=train_indices),
                                       transform=train_transform)
 
-    val_dataset = DatasetFromSubset(torch.utils.data.Subset(train_images_lmdb, indices=val_indices),
+    val_dataset = DatasetFromSubset(torch.utils.data.Subset(train_lmdb, indices=val_indices),
                                     transform=val_transform)
 
     train_data_loader = torch.utils.data.DataLoader(train_dataset,
@@ -38,8 +39,8 @@ def train_model(finetuned_model, train_images_lmdb, train_indices, val_indices, 
                                                     shuffle=True)
 
     val_data_loader = torch.utils.data.DataLoader(val_dataset,
-                                                  num_workers=parameters['data_loader_workers'],
-                                                  batch_size=parameters['classifier']['batch_size'])
+                                                  batch_size=parameters['classifier']['batch_size'],
+                                                  num_workers=parameters['data_loader_workers'])
 
     # Callbacks
     model_checkpoint = ModelCheckpoint(monitor="val_acc",
@@ -75,17 +76,17 @@ def train_model(finetuned_model, train_images_lmdb, train_indices, val_indices, 
 
     # Saving
     best_checkpoint = model_checkpoint.best_model_path
-    model = LeafDoctorModel().load_from_checkpoint(checkpoint_path=best_checkpoint)
+    model = LeafDoctorModel(hparams).load_from_checkpoint(checkpoint_path=best_checkpoint)
     return model
 
 
-def score_model(model, train_images_lmdb, indices, parameters):
+def score_model(model, train_lmdb, indices, parameters):
     logging.info('Scoring model')
     if parameters['classifier'].get('limit_val_batches'):
         indices = indices[:parameters['classifier']['limit_val_batches']*parameters['classifier']['batch_size']]
-    labels = np.array(train_images_lmdb.labels)[indices]
+    labels = np.array(train_lmdb.labels)[indices]
     predictions, probas = predict(model,
-                          dataset=train_images_lmdb,
+                          dataset=train_lmdb,
                           indices=indices,
                           batch_size=parameters['eval']['batch_size'],
                           num_workers=parameters['data_loader_workers'],

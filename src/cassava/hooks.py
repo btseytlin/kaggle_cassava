@@ -8,7 +8,6 @@ from kedro.versioning import Journal
 
 from cassava.pipelines import prepare, pretrain, train_model, cross_validation, predict, finetune
 
-
 class ProjectHooks:
     @hook_impl
     def register_pipelines(self) -> Dict[str, Pipeline]:

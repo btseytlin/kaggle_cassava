@@ -70,7 +70,7 @@ def lr_find(trainer, model, train_data_loader, val_data_loader=None, plot=False)
 
 
 def train_byol(model, hparams, loader):
-    byol = BYOL(model, image_size=(256, 256), hparams=hparams)
+    byol = BYOL(model, image_size=(512, 512), hparams=hparams)
 
     early_stopping = EarlyStopping('train_loss',
                                    mode='min',

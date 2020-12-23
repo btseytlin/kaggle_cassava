@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader, Subset, ConcatDataset
 
 from cassava.lmdb_dataset import dataset_to_lmdb
 from cassava.transforms import lmdb_transforms
-from cassava.utils import DatasetFromSubset
+from cassava.utils import DatasetFromSubset, make_2019_like_2020
 from PIL import Image
 import imagehash
 
@@ -92,6 +92,10 @@ def find_duplicates(image_ids, image_hashes):
 
 def prepare_lmdb(train_images_torch_2020, train_images_torch_2019, test_images_torch_2019, extra_images_torch_2019, duplicates):
     blacklist = dict(duplicates[['ds2', 'id2']].groupby('ds2').agg({'id2': list})['id2'])
+
+    train_images_torch_2019.transform = make_2019_like_2020
+    test_images_torch_2019.transform = make_2019_like_2020
+    extra_images_torch_2019.transform = make_2019_like_2020
 
     train_dataset_2020 = DatasetFromSubset(
         Subset(train_images_torch_2020, indices=[i for i in range(len(train_images_torch_2020)) if i not in blacklist['train_2020']]),

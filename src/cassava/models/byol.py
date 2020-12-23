@@ -33,7 +33,7 @@ class RandomApply(nn.Module):
         return x if random.random() > self.p else self.fn(x)
 
 
-def default_aug(image_size: Tuple[int, int] = (256, 256)) -> nn.Module:
+def default_aug(image_size: Tuple[int, int] = (512, 512)) -> nn.Module:
     return nn.Sequential(
         aug.ColorJitter(contrast=0.1, brightness=0.1, saturation=0.1, p=0.8),
         aug.RandomVerticalFlip(),
@@ -106,7 +106,7 @@ class BYOL(pl.LightningModule):
     def __init__(
         self,
         model: nn.Module,
-        image_size: Tuple[int, int] = (256, 256),
+        image_size: Tuple[int, int] = (512, 512),
         hidden_layer: Union[str, int] = -2,
         projection_size: int = 256,
         hidden_size: int = 4096,

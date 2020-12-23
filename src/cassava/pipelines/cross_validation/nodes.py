@@ -1,21 +1,45 @@
 import logging
 from collections import defaultdict
 from copy import copy
-
 import numpy as np
 import pandas as pd
 import os
 import torch
+from kedro.io import DataCatalog
+from kedro.runner import SequentialRunner
 from sklearn.model_selection import StratifiedKFold
 
+from cassava.extras.datasets.torch_model import TorchLocalModel
 from cassava.pipelines.finetune.nodes import finetune_on_test
 from cassava.pipelines.pretrain.nodes import pretrain_model
 from cassava.pipelines.train_model.nodes import train_model, score_model, split_data
+
+
 from cassava.utils import DatasetFromSubset
 from torch.utils.data import Subset
 
 
-def cross_validation(train_images_lmdb, parameters):
+def obtain_cv_splits(train_lmdb, parameters):
+    labels = train_lmdb.labels
+    sources = train_lmdb.sources
+    indices_2020 = np.argwhere(sources == 'train_2020').flatten()
+    indices_2019 = np.argwhere(sources == 'train_2019').flatten()
+
+    cv = StratifiedKFold(n_splits=parameters['cv_splits'], random_state=parameters['seed'])
+
+    splits = []
+    # Preserve same class distribution in both train and test
+    # Only put 2020 data in test
+    splits_2019 = list(cv.split(indices_2019, labels[indices_2020][:len(indices_2019)]))
+    splits_2020 = list(cv.split(indices_2020, labels[indices_2020]))
+    for (train_2019_idx, test_2019_idx), (train_2020_idx, test_2020_idx) in zip(splits_2019, splits_2020):
+        train_idx = np.concatenate([indices_2019[train_2019_idx], indices_2020[train_2020_idx]])
+        test_idx = indices_2020[test_2020_idx]
+        splits.append((train_idx, test_idx))
+    return splits
+
+
+def cross_validation(train_lmdb, unlabelled_lmdb, cv_splits, parameters):
     cv_results = {
         'summary': {},
     }
@@ -29,36 +53,28 @@ def cross_validation(train_images_lmdb, parameters):
     else:
         os.makedirs(parameters['cv_models_dir'], exist_ok=True)
 
-    cv = StratifiedKFold(n_splits=parameters['cv_splits'], random_state=parameters['seed'])
-    indices = np.array(list(range(len(train_images_lmdb))))
-    labels = train_images_lmdb.labels
-    for fold_num, (train_idx, test_idx) in enumerate(cv.split(indices, labels)):
+    for fold_num, (train_idx, test_idx) in enumerate(cv_splits):
         logging.info('Fitting CV fold %d', fold_num)
-
         model_path = os.path.join(parameters['cv_models_dir'], f'model_fold_{fold_num}.pt')
         fold_parameters = copy(parameters)
-        fold_train_dataset = DatasetFromSubset(Subset(train_images_lmdb, indices=train_idx))
-        fold_test_dataset = DatasetFromSubset(Subset(train_images_lmdb, indices=test_idx))
-        train_labels = fold_train_dataset.labels
-        train_labels_df = pd.DataFrame({'label': train_labels}, index=range(len(train_labels)))
 
-        logging.info('Pretraining on train+val')
-        pretrained_model = pretrain_model(fold_train_dataset, fold_parameters)
-
-        logging.info('Finetuning on train+val+test')
-        finetuned_model = finetune_on_test(pretrained_model, fold_train_dataset, fold_test_dataset, fold_parameters)
+        fold_train_dataset = DatasetFromSubset(Subset(train_lmdb, indices=train_idx))
+        fold_test_dataset = DatasetFromSubset(Subset(train_lmdb, indices=test_idx))
 
         # Split
-        fold_train_idx, fold_val_idx = split_data(train_labels_df, fold_parameters)
-        global_val_idx = train_idx[fold_val_idx]
+        fold_train_idx, fold_val_idx = split_data(fold_train_dataset, fold_parameters)
         global_train_idx = train_idx[fold_train_idx]
+        global_val_idx = train_idx[fold_val_idx]
 
         # Assert no leakage of test into train
         assert not bool(set(global_train_idx).intersection(set(global_val_idx)))
         assert not bool(set(global_train_idx).union(set(global_val_idx)).intersection(set(test_idx)))
 
+        logging.info('Pretraining on train+val')
+        pretrained_model = pretrain_model(fold_train_dataset, unlabelled_lmdb, fold_parameters)
+
         logging.info('Training on train, early stopping using val')
-        model = train_model(finetuned_model, fold_train_dataset, fold_train_idx, fold_val_idx, fold_parameters)
+        model = train_model(pretrained_model, fold_train_dataset, fold_train_idx, fold_val_idx, fold_parameters)
 
         torch.save(model.state_dict(), model_path)
 

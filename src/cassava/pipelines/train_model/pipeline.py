@@ -8,19 +8,19 @@ def create_pipeline(**kwargs):
         [
             node(
                 split_data,
-                ["train_labels", "parameters"],
+                ["train_lmdb", "parameters"],
                 ["train_indices", "val_indices"],
                 name='split',
             ),
             node(
                 train_model,
-                ["finetuned_model", "train_images_lmdb", "train_indices", "val_indices", "parameters"],
+                ["pretrained_model", "train_lmdb", "train_indices", "val_indices", "parameters"],
                 "model",
                 name='train',
             ),
             node(
                 score_model,
-                ["model", "train_images_lmdb", "val_indices", "parameters"],
+                ["model", "train_lmdb", "val_indices", "parameters"],
                 ["val_scores", "val_predictions"],
                 name='val_score',
             ),
