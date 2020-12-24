@@ -11,7 +11,7 @@ from cassava.models.model import LeafDoctorModel
 from cassava.node_helpers import predict
 
 
-def predict_submission(cv_results, test_images_lmdb, sample_submission, parameters):
+def predict_submission(cv_results, test_images_torch_2020, sample_submission, parameters):
     logging.debug('Predicting on test with model')
 
     fold_model_names = [cv_results[fold]['model_path'] for fold in cv_results if fold != 'summary']
@@ -22,8 +22,8 @@ def predict_submission(cv_results, test_images_lmdb, sample_submission, paramete
         model.load_state_dict(torch.load(model_path))
 
         predictions, probas = predict(model,
-                                  dataset=test_images_lmdb,
-                                  indices=list(range(len(test_images_lmdb))),
+                                  dataset=test_images_torch_2020,
+                                  indices=list(range(len(test_images_torch_2020))),
                                   batch_size=parameters['eval']['batch_size'],
                                   num_workers=parameters['data_loader_workers'],
                                   transform=get_test_transforms())

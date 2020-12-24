@@ -9,8 +9,8 @@ from cassava.transforms import byol_transforms
 from cassava.utils import DatasetFromSubset
 
 
-def finetune_on_test(pretrained_model, train_images_lmdb, test_images_lmdb, parameters):
-    dataset = torch.utils.data.ConcatDataset([train_images_lmdb, test_images_lmdb])
+def finetune_on_test(pretrained_model, train_images_lmdb, test_images_torch_2020, parameters):
+    dataset = torch.utils.data.ConcatDataset([train_images_lmdb, test_images_torch_2020])
     dataset = DatasetFromSubset(
         torch.utils.data.Subset(dataset, indices=list(range(len(dataset)))),
         transform = byol_transforms)

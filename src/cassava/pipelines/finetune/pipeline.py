@@ -8,7 +8,7 @@ def create_pipeline(**kwargs):
         [
             node(
                 finetune_on_test,
-                ["pretrained_model", "train_images_lmdb", "test_images_lmdb", "parameters"],
+                ["pretrained_model", "train_images_lmdb", "test_images_torch_2020", "parameters"],
                 "finetuned_model",
                 name="finetune_on_test"
             ),
