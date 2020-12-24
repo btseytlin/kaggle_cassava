@@ -57,17 +57,17 @@ duplicates:
 
 # Primary data
 
-train_lmdb:
-  type: cassava.extras.datasets.lmdb_dataset.KedroImageLMDBDataSet
-  filepath: /data/cassava_extra_data/data/03_primary/train.lmdb
+train:
+  type: cassava.extras.datasets.image_dataset.ImageOneFolderDataSet
+  filepath: data/03_primary
+  labels_path: train.csv
+  images_path: train
 
-unlabelled_lmdb:
-  type: cassava.extras.datasets.lmdb_dataset.KedroImageLMDBDataSet
-  filepath: /data/cassava_extra_data/data/03_primary/unlabelled.lmdb
-
-test_lmdb:
-  type: cassava.extras.datasets.lmdb_dataset.KedroImageLMDBDataSet
-  filepath: data/03_primary/test.lmdb
+unlabelled:
+  type: cassava.extras.datasets.image_dataset.ImageOneFolderDataSet
+  filepath: data/03_primary
+  labels_path: unlabelled.csv
+  images_path: unlabelled
 
 # Models
 

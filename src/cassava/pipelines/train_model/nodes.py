@@ -5,18 +5,18 @@ import torch
 import numpy as np
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
+from torch.utils.data import Subset, DataLoader
 
 from cassava.models.model import LeafDoctorModel
-from cassava.models.byol import BYOL
 from cassava.transforms import get_train_transforms, get_test_transforms
 from cassava.utils import DatasetFromSubset
 from cassava.pipelines.predict.nodes import predict
 from cassava.node_helpers import score
 
 
-def split_data(train_lmdb, parameters):
+def split_data(train, parameters):
     """Splits trainig data into the train and validation set"""
-    labels = train_lmdb.labels
+    labels = train.labels
     train_indices, val_indices = train_test_split(range(len(labels)),
                      stratify=labels,
                      random_state=parameters['seed'],
@@ -24,21 +24,21 @@ def split_data(train_lmdb, parameters):
     return train_indices, val_indices
 
 
-def train_model(finetuned_model, train_lmdb, train_indices, val_indices, parameters):
+def train_model(finetuned_model, train, train_indices, val_indices, parameters):
     train_transform, val_transform = get_train_transforms(), get_test_transforms()
 
-    train_dataset = DatasetFromSubset(torch.utils.data.Subset(train_lmdb, indices=train_indices),
+    train_dataset = DatasetFromSubset(Subset(train, indices=train_indices),
                                       transform=train_transform)
 
-    val_dataset = DatasetFromSubset(torch.utils.data.Subset(train_lmdb, indices=val_indices),
+    val_dataset = DatasetFromSubset(Subset(train, indices=val_indices),
                                     transform=val_transform)
 
-    train_data_loader = torch.utils.data.DataLoader(train_dataset,
+    train_data_loader = DataLoader(train_dataset,
                                                     batch_size=parameters['classifier']['batch_size'],
                                                     num_workers=parameters['data_loader_workers'],
                                                     shuffle=True)
 
-    val_data_loader = torch.utils.data.DataLoader(val_dataset,
+    val_data_loader = DataLoader(val_dataset,
                                                   batch_size=parameters['classifier']['batch_size'],
                                                   num_workers=parameters['data_loader_workers'])
 
@@ -80,13 +80,13 @@ def train_model(finetuned_model, train_lmdb, train_indices, val_indices, paramet
     return model
 
 
-def score_model(model, train_lmdb, indices, parameters):
+def score_model(model, train, indices, parameters):
     logging.info('Scoring model')
     if parameters['classifier'].get('limit_val_batches'):
         indices = indices[:parameters['classifier']['limit_val_batches']*parameters['classifier']['batch_size']]
-    labels = np.array(train_lmdb.labels)[indices]
+    labels = np.array(train.labels)[indices]
     predictions, probas = predict(model,
-                          dataset=train_lmdb,
+                          dataset=train,
                           indices=indices,
                           batch_size=parameters['eval']['batch_size'],
                           num_workers=parameters['data_loader_workers'],

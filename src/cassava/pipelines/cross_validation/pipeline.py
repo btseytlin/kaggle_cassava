@@ -8,12 +8,12 @@ def create_pipeline(**kwargs):
         [
             node(
                 obtain_cv_splits,
-                ["train_lmdb", "parameters"],
+                ["train", "parameters"],
                 "cv_splits"
             ),
             node(
                 cross_validation,
-                ["train_lmdb", "unlabelled_lmdb", "cv_splits", "parameters"],
+                ["train", "unlabelled", "cv_splits", "parameters"],
                 "cv_results",
                 name='cross_validation',
             ),

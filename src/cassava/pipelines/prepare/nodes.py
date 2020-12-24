@@ -1,14 +1,14 @@
 import numpy as np
 import pandas as pd
+from skimage.io import imsave
 from tqdm.auto import tqdm
 import os
 import logging
 import torch
 from torch.utils.data import DataLoader, Subset, ConcatDataset
 
-from cassava.lmdb_dataset import dataset_to_lmdb
 from cassava.transforms import lmdb_transforms
-from cassava.utils import DatasetFromSubset, make_2019_like_2020
+from cassava.utils import DatasetFromSubset, make_2019_like_2020, CassavaDataset
 from PIL import Image
 import imagehash
 
@@ -90,7 +90,7 @@ def find_duplicates(image_ids, image_hashes):
     return out_rows
 
 
-def prepare_lmdb(train_images_torch_2020, train_images_torch_2019, test_images_torch_2019, extra_images_torch_2019, duplicates):
+def prepare_dataset(train_images_torch_2020, train_images_torch_2019, test_images_torch_2019, extra_images_torch_2019, duplicates):
     blacklist = dict(duplicates[['ds2', 'id2']].groupby('ds2').agg({'id2': list})['id2'])
 
     train_images_torch_2019.transform = make_2019_like_2020
@@ -122,14 +122,32 @@ def prepare_lmdb(train_images_torch_2020, train_images_torch_2019, test_images_t
     unlabelled_dataset = ConcatDataset([test_dataset_2019, extra_images_torch_2019])
     unlabelled_sources = ['test_2019'] * len(test_dataset_2019) + ['extra_2019'] * len(extra_images_torch_2019)
 
-    train_lmdb_path = '/data/cassava_extra_data/data/03_primary/train.lmdb'
-    unlabelled_lmdb_path = '/data/cassava_extra_data/data/03_primary/unlabelled.lmdb'
+    train_path = 'data/03_primary/train'
+    train_csv_path = 'data/03_primary/train.csv'
+    unlabelled_path = 'data/03_primary/unlabelled'
+    unlabelled_csv_path = 'data/03_primary/unlabelled.csv'
 
-    if any([os.path.exists(train_lmdb_path),
-            os.path.exists(unlabelled_lmdb_path)]):
-        raise Exception('LMDB files already exist, delete manually to overwrite.')
+    if any([os.path.exists(train_path),
+            os.path.exists(unlabelled_path)]):
+        raise Exception('Dataset folders already exist, delete manually to overwrite.')
 
-    train_lmdb = dataset_to_lmdb(train_dataset, train_sources, train_lmdb_path)
-    unlabelled_lmdb = dataset_to_lmdb(unlabelled_dataset, unlabelled_sources, unlabelled_lmdb_path)
+    os.makedirs(train_path, exist_ok=True)
+    os.makedirs(unlabelled_path, exist_ok=True)
 
-    return train_lmdb, unlabelled_lmdb
+    def make_image_folder(dataset, sources, path, csv_path):
+        loader = DataLoader(dataset, batch_size=None, num_workers=6, collate_fn=lambda x: x)
+        rows = []
+        for ix, (image, label) in enumerate(tqdm(loader)):
+            image_id = f'{ix}.jpg'
+            source = sources[ix]
+            img_path = os.path.join(path, image_id)
+            imsave(img_path, image)
+            rows.append((image_id, label, source))
+
+        df = pd.DataFrame(rows, columns=['image_id', 'label', 'source'])
+        df.to_csv(csv_path, index=False)
+        return df
+
+    train_df = make_image_folder(train_dataset, train_sources, train_path, train_csv_path)
+    unlabelled_df = make_image_folder(unlabelled_dataset, unlabelled_sources, unlabelled_path, unlabelled_csv_path)
+    return CassavaDataset(train_path, train_df.image_id, train_df.label), CassavaDataset(unlabelled_path, unlabelled_df.image_id, unlabelled_df.label)

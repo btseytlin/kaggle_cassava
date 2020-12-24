@@ -10,14 +10,14 @@ from cassava.transforms import byol_transforms
 from cassava.utils import DatasetFromSubset
 
 
-def pretrain_model(train_lmdb, unlabelled_lmdb, parameters):
-    train_lmdb_dataset = DatasetFromSubset(
-        Subset(train_lmdb, indices=list(range(len(train_lmdb)))),
+def pretrain_model(train, unlabelled, parameters):
+    train_dataset = DatasetFromSubset(
+        Subset(train, indices=list(range(len(train)))),
         transform=byol_transforms)
-    unlabelled_lmdb_dataset = DatasetFromSubset(
-        Subset(unlabelled_lmdb, indices=list(range(len(unlabelled_lmdb)))),
+    unlabelled_dataset = DatasetFromSubset(
+        Subset(unlabelled, indices=list(range(len(unlabelled)))),
         transform=byol_transforms)
-    dataset = ConcatDataset([train_lmdb_dataset, unlabelled_lmdb_dataset])
+    dataset = ConcatDataset([train_dataset, unlabelled_dataset])
     loader = DataLoader(dataset,
                         batch_size=parameters['byol']['batch_size'],
                         num_workers=parameters['data_loader_workers'],

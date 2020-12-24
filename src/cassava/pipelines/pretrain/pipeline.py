@@ -8,7 +8,7 @@ def create_pipeline(**kwargs):
         [
             node(
                 pretrain_model,
-                ["train_lmdb", "unlabelled_lmdb", "parameters"],
+                ["train", "unlabelled", "parameters"],
                 "pretrained_model",
                 name="pretrain"
             ),

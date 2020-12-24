@@ -1,6 +1,6 @@
 from kedro.pipeline import Pipeline, node
 
-from .nodes import prepare_lmdb, find_duplicates, obtain_image_hashes
+from .nodes import prepare_dataset, find_duplicates, obtain_image_hashes
 
 
 def create_pipeline(**kwargs):
@@ -19,10 +19,10 @@ def create_pipeline(**kwargs):
                 name='find_duplicates'
             ),
             node(
-                prepare_lmdb,
+                prepare_dataset,
                 ['train_images_torch_2020', 'train_images_torch_2019', 'test_images_torch_2019', 'extra_images_torch_2019', 'duplicates'],
-                ["train_lmdb", "unlabelled_lmdb"],
-                name="prepare_lmdb"
+                ["train", "unlabelled"],
+                name="prepare_dataset"
             ),
         ]
     )

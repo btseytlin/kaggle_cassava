@@ -19,9 +19,9 @@ from cassava.utils import DatasetFromSubset
 from torch.utils.data import Subset
 
 
-def obtain_cv_splits(train_lmdb, parameters):
-    labels = train_lmdb.labels
-    sources = train_lmdb.sources
+def obtain_cv_splits(train, parameters):
+    labels = train.labels
+    sources = train.sources
     indices_2020 = np.argwhere(sources == 'train_2020').flatten()
     indices_2019 = np.argwhere(sources == 'train_2019').flatten()
 
@@ -39,7 +39,7 @@ def obtain_cv_splits(train_lmdb, parameters):
     return splits
 
 
-def cross_validation(train_lmdb, unlabelled_lmdb, cv_splits, parameters):
+def cross_validation(train, unlabelled, cv_splits, parameters):
     cv_results = {
         'summary': {},
     }
@@ -58,8 +58,8 @@ def cross_validation(train_lmdb, unlabelled_lmdb, cv_splits, parameters):
         model_path = os.path.join(parameters['cv_models_dir'], f'model_fold_{fold_num}.pt')
         fold_parameters = copy(parameters)
 
-        fold_train_dataset = DatasetFromSubset(Subset(train_lmdb, indices=train_idx))
-        fold_test_dataset = DatasetFromSubset(Subset(train_lmdb, indices=test_idx))
+        fold_train_dataset = DatasetFromSubset(Subset(train, indices=train_idx))
+        fold_test_dataset = DatasetFromSubset(Subset(train, indices=test_idx))
 
         # Split
         fold_train_idx, fold_val_idx = split_data(fold_train_dataset, fold_parameters)
@@ -71,7 +71,7 @@ def cross_validation(train_lmdb, unlabelled_lmdb, cv_splits, parameters):
         assert not bool(set(global_train_idx).union(set(global_val_idx)).intersection(set(test_idx)))
 
         logging.info('Pretraining on train+val')
-        pretrained_model = pretrain_model(fold_train_dataset, unlabelled_lmdb, fold_parameters)
+        pretrained_model = pretrain_model(fold_train_dataset, unlabelled, fold_parameters)
 
         logging.info('Training on train, early stopping using val')
         model = train_model(pretrained_model, fold_train_dataset, fold_train_idx, fold_val_idx, fold_parameters)
@@ -79,7 +79,7 @@ def cross_validation(train_lmdb, unlabelled_lmdb, cv_splits, parameters):
         torch.save(model.state_dict(), model_path)
 
         # Score on validation
-        val_scores, oof_predictions = score_model(model, fold_train_dataset, fold_val_idx, fold_parameters)
+        val_scores, val_predictions = score_model(model, fold_train_dataset, fold_val_idx, fold_parameters)
 
         # Score on test
         test_scores, test_predictions = score_model(model, fold_test_dataset, list(range(len(fold_test_dataset))), fold_parameters)
@@ -89,7 +89,7 @@ def cross_validation(train_lmdb, unlabelled_lmdb, cv_splits, parameters):
             'val_indices': global_val_idx,
             'test_indices': test_idx,
             'val_scores': val_scores,
-            'oof_predictions': oof_predictions,
+            'val_predictions': val_predictions,
             'test_scores': test_scores,
             'test_predictions': test_predictions,
         }

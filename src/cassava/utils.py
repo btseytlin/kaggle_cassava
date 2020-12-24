@@ -165,12 +165,13 @@ class DatasetFromSubset(Dataset):
 
 
 class CassavaDataset(Dataset):
-    def __init__(self, root, image_ids, labels, transform=None):
+    def __init__(self, root, image_ids, labels, sources=None, transform=None):
         super().__init__()
         self.root = root
         self.image_ids = image_ids
         self.labels = labels
         self.targets = self.labels
+        self.sources = sources
         self.transform = transform
 
     def __len__(self):

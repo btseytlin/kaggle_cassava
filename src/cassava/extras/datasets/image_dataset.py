@@ -1,19 +1,11 @@
 import os
 import pandas as pd
-from PIL import Image
-from skimage import io
-from kedro.io import AbstractDataSet
+import logging
 import copy
 from pathlib import Path
 from typing import Any, Dict
-
-import logging
-
-from albumentations.pytorch.transforms import ToTensorV2
-import torchvision
-from torch.utils.data import Dataset
+from kedro.io import AbstractDataSet
 from torchvision.datasets import ImageFolder
-
 from cassava.utils import CassavaDataset
 
 log = logging.getLogger(__name__)
@@ -52,11 +44,20 @@ class ImageOneFolderDataSet(AbstractDataSet):
         load_path = Path(self._labels_path)
         load_args = copy.deepcopy(self._load_args)
         load_args = load_args or dict()
+
         df = pd.read_csv(load_path)
+        image_ids = df['image_id'].values
+        labels = df['label'].values
+        if 'source' in df.columns:
+            sources = df['source'].values
+        else:
+            sources = None
+
         load_args['root'] = Path(self._images_path)
+        load_args['image_ids'] = image_ids
+        load_args['labels'] = labels
+        load_args['sources'] = sources
         dataset = CassavaDataset(
-            image_ids=df['image_id'].values,
-            labels=df['label'].values,
             **load_args
         )
 
@@ -64,7 +65,7 @@ class ImageOneFolderDataSet(AbstractDataSet):
 
     def _save(self, vision_dataset) -> None:
         """ Not Implemented """
-        raise NotImplementedError()
+        pass
 
     def _describe(self) -> Dict[str, Any]:
         return dict(
