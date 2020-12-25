@@ -1,12 +1,8 @@
 import logging
-import os
 import numpy as np
-import pandas as pd
 import torch
-from tqdm import tqdm
 
-from cassava.transforms import get_train_transforms, get_test_transforms
-from cassava.utils import DatasetFromSubset
+from cassava.transforms import get_test_transforms
 from cassava.models.model import LeafDoctorModel
 from cassava.node_helpers import predict
 

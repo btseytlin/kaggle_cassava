@@ -70,7 +70,7 @@ def cross_validation(train, unlabelled, cv_splits, parameters):
         assert not bool(set(global_train_idx).intersection(set(global_val_idx)))
         assert not bool(set(global_train_idx).union(set(global_val_idx)).intersection(set(test_idx)))
 
-        logging.info('Pretraining on train+val')
+        logging.info('Pretraining on train+unlabelled')
         pretrained_model = pretrain_model(fold_train_dataset, unlabelled, fold_parameters)
 
         logging.info('Training on train, early stopping using val')
