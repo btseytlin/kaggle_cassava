@@ -103,7 +103,7 @@ def make_confusion_matrix(cf,
 
 
 def plot_image(img, label=None, ax=None):
-    img = torch.Tensor(np.array(img))
+    new_img = torch.Tensor(np.array(img))
     label_num_to_disease_map = {0: 'Cassava Bacterial Blight (CBB)',
                                 1: 'Cassava Brown Streak Disease (CBSD)',
                                 2: 'Cassava Green Mottle (CGM)',
@@ -112,7 +112,7 @@ def plot_image(img, label=None, ax=None):
 
     if not ax:
         ax = plt.gca()
-    ax.imshow(img.permute(2, 1, 0))
+    ax.imshow(new_img.permute(2, 1, 0))
     ax.axis('off')
     if label is not None:
 

@@ -7,7 +7,7 @@ import logging
 import torch
 from torch.utils.data import DataLoader, Subset, ConcatDataset
 
-from cassava.transforms import lmdb_transforms
+from cassava.transforms import prepare_transforms
 from cassava.utils import DatasetFromSubset, make_2019_like_2020, CassavaDataset
 from PIL import Image
 import imagehash
@@ -99,22 +99,22 @@ def prepare_dataset(train_images_torch_2020, train_images_torch_2019, test_image
 
     train_dataset_2020 = DatasetFromSubset(
         Subset(train_images_torch_2020, indices=[i for i in range(len(train_images_torch_2020)) if i not in blacklist['train_2020']]),
-        transform=lmdb_transforms)
+        transform=prepare_transforms)
 
     train_dataset_2019 = DatasetFromSubset(
         Subset(train_images_torch_2019,
                indices=[i for i in range(len(train_images_torch_2019)) if i not in blacklist['train_2019']]),
-        transform=lmdb_transforms)
+        transform=prepare_transforms)
 
     test_dataset_2019 = DatasetFromSubset(
         Subset(test_images_torch_2019,
                indices=[i for i in range(len(test_images_torch_2019)) if i not in blacklist['test_2019']]),
-        transform=lmdb_transforms, target_transform=lambda y: -1)
+        transform=prepare_transforms, target_transform=lambda y: -1)
 
     extra_images_torch_2019 = DatasetFromSubset(
         Subset(extra_images_torch_2019,
                indices=[i for i in range(len(extra_images_torch_2019)) if i not in blacklist['extra_2019']]),
-        transform=lmdb_transforms, target_transform=lambda y: -1)
+        transform=prepare_transforms, target_transform=lambda y: -1)
 
     train_dataset = ConcatDataset([train_dataset_2020, train_dataset_2019])
     train_sources = ['train_2020']*len(train_dataset_2020) + ['train_2019']*len(train_dataset_2019)
