@@ -39,7 +39,7 @@ class LeafDoctorModel(pl.LightningModule):
         return {
             'optimizer': optimizer,
             'lr_scheduler': lr_scheduler,
-            'monitor': 'val_acc',
+            'monitor': 'val_loss',
             'interval': 'epoch',
             'frequency': 1
         }

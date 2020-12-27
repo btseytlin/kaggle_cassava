@@ -43,14 +43,14 @@ def train_model(finetuned_model, train, train_indices, val_indices, parameters):
                                                   num_workers=parameters['data_loader_workers'])
 
     # Callbacks
-    model_checkpoint = ModelCheckpoint(monitor="val_acc",
-                                       mode='max',
+    model_checkpoint = ModelCheckpoint(monitor="val_loss",
+                                       mode='min',
                                        verbose=True,
                                        dirpath=parameters['classifier']['checkpoints_dir'],
-                                       filename="{epoch}_{val_acc:.4f}",
+                                       filename="{epoch}_{val_loss:.4f}",
                                        save_top_k=parameters['classifier']['save_top_k_checkpoints'])
-    early_stopping = EarlyStopping('val_acc',
-                                   mode='max',
+    early_stopping = EarlyStopping('val_loss',
+                                   mode='min',
                                    patience=parameters['classifier']['early_stop_patience'],
                                    verbose=True,
                                    )

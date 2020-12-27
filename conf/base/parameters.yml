@@ -23,7 +23,7 @@ classifier:
 
 byol:
   gpus: -1
-  batch_size: 6
+  batch_size: 12
   accumulate_grad_batches: 1
   max_epochs: 100
   max_steps: 0
