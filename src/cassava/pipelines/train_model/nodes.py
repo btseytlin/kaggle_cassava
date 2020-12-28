@@ -11,7 +11,7 @@ from cassava.models.model import LeafDoctorModel
 from cassava.transforms import get_train_transforms, get_test_transforms
 from cassava.utils import DatasetFromSubset
 from cassava.pipelines.predict.nodes import predict
-from cassava.node_helpers import score
+from cassava.node_helpers import score, train_classifier
 
 
 def split_data(train, parameters):
@@ -24,59 +24,37 @@ def split_data(train, parameters):
     return train_indices, val_indices
 
 
-def train_model(finetuned_model, train, train_indices, val_indices, parameters):
-    train_transform, val_transform = get_train_transforms(), get_test_transforms()
+def train_model(finetuned_model, train, parameters):
+    train_transform = get_train_transforms(parameters['classifier']['train_width'], parameters['classifier']['train_height'])
 
-    train_dataset = DatasetFromSubset(Subset(train, indices=train_indices),
+    train_dataset = DatasetFromSubset(Subset(train, indices=list(range(len(train)))),
                                       transform=train_transform)
 
-    val_dataset = DatasetFromSubset(Subset(train, indices=val_indices),
-                                    transform=val_transform)
-
-    train_data_loader = DataLoader(train_dataset,
-                                                    batch_size=parameters['classifier']['batch_size'],
-                                                    num_workers=parameters['data_loader_workers'],
-                                                    shuffle=True)
-
-    val_data_loader = DataLoader(val_dataset,
-                                                  batch_size=parameters['classifier']['batch_size'],
-                                                  num_workers=parameters['data_loader_workers'])
-
-    # Callbacks
-    model_checkpoint = ModelCheckpoint(monitor="val_loss",
-                                       mode='min',
-                                       verbose=True,
-                                       dirpath=parameters['classifier']['checkpoints_dir'],
-                                       filename="{epoch}_{val_loss:.4f}",
-                                       save_top_k=parameters['classifier']['save_top_k_checkpoints'])
-    early_stopping = EarlyStopping('val_loss',
-                                   mode='min',
-                                   patience=parameters['classifier']['early_stop_patience'],
-                                   verbose=True,
-                                   )
+    train_loader = DataLoader(train_dataset,
+                                batch_size=parameters['classifier']['batch_size'],
+                                num_workers=parameters['data_loader_workers'],
+                                shuffle=True)
 
     hparams = Namespace(**parameters['classifier'])
 
-    trainer = Trainer.from_argparse_args(
-        hparams,
-        reload_dataloaders_every_epoch = True,
-        terminate_on_nan=True,
-        callbacks=[model_checkpoint, early_stopping],
-        precision=hparams.precision,
-        amp_level=hparams.amp_level,
-    )
+    # Train
+    logging.info('Training model')
+    hparams.max_epochs = hparams.max_epochs - hparams.finetune_epochs
+    model = train_classifier(finetuned_model, train_loader, hparams=hparams)
 
-    # Model
-    model = LeafDoctorModel(hparams)
-    model.load_state_dict(finetuned_model.state_dict())
-
-    # Training
-    trainer.fit(model, train_data_loader, val_data_loader)
-    logging.info('Training finished')
-
-    # Saving
-    best_checkpoint = model_checkpoint.best_model_path
-    model = LeafDoctorModel(hparams).load_from_checkpoint(checkpoint_path=best_checkpoint)
+    # Finetune for test image size
+    hparams = Namespace(**parameters['classifier'])
+    logging.info('Finetuning model for test image size')
+    train_transform = get_train_transforms(parameters['classifier']['test_width'],
+                                           parameters['classifier']['test_height'])
+    train_dataset = DatasetFromSubset(Subset(train, indices=list(range(len(train)))),
+                                      transform=train_transform)
+    train_loader = DataLoader(train_dataset,
+                              batch_size=parameters['classifier']['batch_size'],
+                              num_workers=parameters['data_loader_workers'],
+                              shuffle=True)
+    hparams.max_epochs = hparams.finetune_epochs
+    model = train_classifier(model, train_loader, hparams=hparams)
     return model
 
 
@@ -90,7 +68,7 @@ def score_model(model, train, indices, parameters):
                           indices=indices,
                           batch_size=parameters['eval']['batch_size'],
                           num_workers=parameters['data_loader_workers'],
-                          transform=get_test_transforms())
+                          transform=get_test_transforms(parameters['classifier']['test_width'], parameters['classifier']['test_height']))
 
     scores = score(predictions, labels)
 

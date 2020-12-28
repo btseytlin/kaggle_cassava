@@ -5,11 +5,12 @@ import torch
 from cassava.models.model import LeafDoctorModel
 from cassava.node_helpers import lr_find, train_byol
 
-from cassava.transforms import byol_transforms
+from cassava.transforms import get_byol_transforms
 from cassava.utils import DatasetFromSubset
 
 
 def finetune_on_test(pretrained_model, train_images_lmdb, test_images_torch_2020, parameters):
+    byol_transforms = get_byol_transforms(parameters['byol']['width'], parameters['byol']['height'])
     dataset = torch.utils.data.ConcatDataset([train_images_lmdb, test_images_torch_2020])
     dataset = DatasetFromSubset(
         torch.utils.data.Subset(dataset, indices=list(range(len(dataset)))),

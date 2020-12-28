@@ -5,14 +5,11 @@ import numpy as np
 import pandas as pd
 import os
 import torch
-from kedro.io import DataCatalog
-from kedro.runner import SequentialRunner
 from sklearn.model_selection import StratifiedKFold
 
-from cassava.extras.datasets.torch_model import TorchLocalModel
 from cassava.pipelines.finetune.nodes import finetune_on_test
 from cassava.pipelines.pretrain.nodes import pretrain_model
-from cassava.pipelines.train_model.nodes import train_model, score_model, split_data
+from cassava.pipelines.train_model.nodes import train_model, score_model
 
 
 from cassava.utils import DatasetFromSubset
@@ -62,41 +59,26 @@ def cross_validation(train, unlabelled, cv_splits, parameters):
         fold_test_dataset = DatasetFromSubset(Subset(train, indices=test_idx))
 
         # Split
-        fold_train_idx, fold_val_idx = split_data(fold_train_dataset, fold_parameters)
-        global_train_idx = train_idx[fold_train_idx]
-        global_val_idx = train_idx[fold_val_idx]
-
-        # Assert no leakage of test into train
-        assert not bool(set(global_train_idx).intersection(set(global_val_idx)))
-        assert not bool(set(global_train_idx).union(set(global_val_idx)).intersection(set(test_idx)))
-
         logging.info('Pretraining on train+unlabelled')
         pretrained_model = pretrain_model(fold_train_dataset, unlabelled, fold_parameters)
 
-        logging.info('Training on train, early stopping using val')
-        model = train_model(pretrained_model, fold_train_dataset, fold_train_idx, fold_val_idx, fold_parameters)
+        logging.info('Training on train')
+        model = train_model(pretrained_model, fold_train_dataset, fold_parameters)
 
         torch.save(model.state_dict(), model_path)
-
-        # Score on validation
-        val_scores, val_predictions = score_model(model, fold_train_dataset, fold_val_idx, fold_parameters)
 
         # Score on test
         test_scores, test_predictions = score_model(model, fold_test_dataset, list(range(len(fold_test_dataset))), fold_parameters)
 
         cv_results[f'fold_{fold_num}'] = {
             'model_path': model_path,
-            'val_indices': global_val_idx,
             'test_indices': test_idx,
-            'val_scores': val_scores,
-            'val_predictions': val_predictions,
             'test_scores': test_scores,
             'test_predictions': test_predictions,
         }
 
         for score in test_scores:
             score_values['test'][score].append(test_scores[score])
-            score_values['val'][score].append(val_scores[score])
 
     for score_set in score_values:
         for score_name, scores in score_values[score_set].items():

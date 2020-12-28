@@ -22,7 +22,7 @@ def predict_submission(cv_results, test_images_torch_2020, sample_submission, pa
                                   indices=list(range(len(test_images_torch_2020))),
                                   batch_size=parameters['eval']['batch_size'],
                                   num_workers=parameters['data_loader_workers'],
-                                  transform=get_test_transforms())
+                                  transform=get_test_transforms(parameters['classifier']['test_width'], parameters['classifier']['test_height']))
 
         all_probas.append(probas)
 

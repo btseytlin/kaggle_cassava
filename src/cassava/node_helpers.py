@@ -7,6 +7,7 @@ from tqdm.auto import tqdm
 from sklearn.metrics import accuracy_score, f1_score
 
 from cassava.models.byol import BYOL
+from cassava.models.model import LeafDoctorModel
 from cassava.transforms import get_test_transforms
 from cassava.utils import DatasetFromSubset
 from matplotlib import pyplot as plt
@@ -20,7 +21,6 @@ def score(predictions, labels):
 
 
 def predict(model, dataset, indices, batch_size=10, num_workers=4, transform=None):
-    transform = transform or get_test_transforms()
     dataset = DatasetFromSubset(
         Subset(dataset, indices=indices),
         transform=transform)
@@ -67,6 +67,26 @@ def lr_find(trainer, model, train_data_loader, val_data_loader=None, plot=False)
     logging.info('LR finder suggestion: %f', newlr)
 
     return newlr
+
+
+def train_classifier(model, train_loader, hparams):
+    trainer = Trainer.from_argparse_args(
+        hparams,
+        reload_dataloaders_every_epoch=True,
+        terminate_on_nan=True,
+        precision=hparams.precision,
+        amp_level=hparams.amp_level,
+    )
+
+    # Model
+    new_model = LeafDoctorModel(hparams)
+    new_model.load_state_dict(model.state_dict())
+    model = new_model
+
+    # Training
+    trainer.fit(model, train_loader)
+    logging.info('Training finished')
+    return model
 
 
 def train_byol(model, hparams, loader):

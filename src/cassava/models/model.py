@@ -33,15 +33,12 @@ class LeafDoctorModel(pl.LightningModule):
         optimizer = torch.optim.AdamW(self.parameters(),
                                       lr=self.hparams.lr or self.hparams.learning_rate,
                                       weight_decay=self.hparams.weight_decay)
-        lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
-                                                                  patience=self.hparams.reduce_lr_on_pleteau_patience,
-                                                                  verbose=True)
+        lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer,
+                                                                            T_0=self.hparams.cosine_annealing_t0,
+                                                                            verbose=True)
         return {
             'optimizer': optimizer,
-            'lr_scheduler': lr_scheduler,
-            'monitor': 'val_loss',
-            'interval': 'epoch',
-            'frequency': 1
+            'lr_scheduler': lr_scheduler
         }
 
     def training_step(self, batch, batch_idx):

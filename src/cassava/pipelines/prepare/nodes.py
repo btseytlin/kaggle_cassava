@@ -7,8 +7,8 @@ import logging
 import torch
 from torch.utils.data import DataLoader, Subset, ConcatDataset
 
-from cassava.transforms import prepare_transforms
-from cassava.utils import DatasetFromSubset, make_2019_like_2020, CassavaDataset
+from cassava.transforms import data_preapre_transform, get_prepare_transforms
+from cassava.utils import DatasetFromSubset, CassavaDataset
 from PIL import Image
 import imagehash
 
@@ -93,10 +93,12 @@ def find_duplicates(image_ids, image_hashes):
 def prepare_dataset(train_images_torch_2020, train_images_torch_2019, test_images_torch_2019, extra_images_torch_2019, duplicates):
     blacklist = dict(duplicates[['ds2', 'id2']].groupby('ds2').agg({'id2': list})['id2'])
 
-    train_images_torch_2019.transform = make_2019_like_2020
-    test_images_torch_2019.transform = make_2019_like_2020
-    extra_images_torch_2019.transform = make_2019_like_2020
+    train_images_torch_2020.transform = data_preapre_transform
+    train_images_torch_2019.transform = data_preapre_transform
+    test_images_torch_2019.transform = data_preapre_transform
+    extra_images_torch_2019.transform = data_preapre_transform
 
+    prepare_transforms = get_prepare_transforms(512, 512)
     train_dataset_2020 = DatasetFromSubset(
         Subset(train_images_torch_2020, indices=[i for i in range(len(train_images_torch_2020)) if i not in blacklist['train_2020']]),
         transform=prepare_transforms)

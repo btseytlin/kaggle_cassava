@@ -6,11 +6,12 @@ from torch.utils.data import ConcatDataset, Subset, DataLoader
 from cassava.models.model import LeafDoctorModel
 from cassava.node_helpers import train_byol
 
-from cassava.transforms import byol_transforms
+from cassava.transforms import get_byol_transforms
 from cassava.utils import DatasetFromSubset
 
 
 def pretrain_model(train, unlabelled, parameters):
+    byol_transforms = get_byol_transforms(parameters['byol']['width'], parameters['byol']['height'])
     train_dataset = DatasetFromSubset(
         Subset(train, indices=list(range(len(train)))),
         transform=byol_transforms)

@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import os
+
+from PIL import Image
 from skimage import io
 from torch.utils.data import Dataset
 import torch
@@ -150,7 +152,7 @@ class DatasetFromSubset(Dataset):
     def __getitem__(self, index):
         x, y = self.subset[index]
         if self.transform:
-            x = self.transform(image=np.array(x))['image']
+            x = self.transform(x)
 
         if self.target_transform:
             y = self.target_transform(y)
@@ -182,25 +184,6 @@ class CassavaDataset(Dataset):
         img = io.imread(os.path.join(self.root, self.image_ids[idx]))
 
         if self.transform:
-            img = self.transform(image=img)['image']
+            img = self.transform(img)
 
         return img, label
-
-
-def make_2019_like_2020(image):
-    """Transforms a PIL Image to have aspec ratio 8/6"""
-    if image.size[0] < image.size[1]:
-        image = image.rotate(90, expand=True)
-
-    # Center crop until 8:6
-    width, height = image.size   # Get dimensions
-    new_height = int(height*(width/height * 6/8))
-    new_width = width
-
-    left = (width - new_width)/2
-    top = (height - new_height)/2
-    right = (width + new_width)/2
-    bottom = (height + new_height)/2
-
-    image = image.crop((left, top, right, bottom))
-    return image

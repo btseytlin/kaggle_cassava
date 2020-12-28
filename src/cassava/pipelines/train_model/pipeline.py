@@ -7,22 +7,10 @@ def create_pipeline(**kwargs):
     return Pipeline(
         [
             node(
-                split_data,
-                ["train", "parameters"],
-                ["train_indices", "val_indices"],
-                name='split',
-            ),
-            node(
                 train_model,
-                ["pretrained_model", "train", "train_indices", "val_indices", "parameters"],
+                ["pretrained_model", "train", "parameters"],
                 "model",
                 name='train',
-            ),
-            node(
-                score_model,
-                ["model", "train", "val_indices", "parameters"],
-                ["val_scores", "val_predictions"],
-                name='val_score',
             ),
         ]
     )
