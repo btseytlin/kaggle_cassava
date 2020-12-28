@@ -167,7 +167,7 @@ class BYOL(pl.LightningModule):
             targ1, targ2 = self.target(x1), self.target(x2)
         loss = torch.mean(normalized_mse(pred1, targ2) + normalized_mse(pred2, targ1))
 
-        self.log("train_loss", loss.item())
+        self.log("train_loss", loss.item(), on_step=True)
         return {"loss": loss}
 
     @torch.no_grad()

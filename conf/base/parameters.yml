@@ -5,26 +5,35 @@ validation_size: 0.15
 data_loader_workers: 4
 
 classifier:
-  train_height: 400
-  train_width: 400
+  train_height: 320
+  train_width: 320
 
-  test_height: 512
-  test_width: 512
+  test_height: 400
+  test_width: 400
 
   gpus: -1
-  batch_size: 24
-  max_epochs: 10
+  batch_size: 20
+  accumulate_grad_batches: 1
+  max_epochs: 20
+
+  finetune_epochs: 5
+
   max_steps: 0
   auto_lr_find: 0
   lr: 0.001
   weight_decay: 0.0001
-  cosine_annealing_t0: 10
-  cosine_annealing_tmult: 2
+
+  bitempered_t1: 0.8
+  bitempered_t2: 1.2
+  label_smoothing: 0.1
 
   amp_level: 'O2'
   precision: 16
 
-  finetune_epochs: 5
+  log_every_n_steps: 10
+  flush_logs_every_n_steps: 100
+
+
 
 byol:
   width: 400
@@ -45,6 +54,10 @@ byol:
 
   amp_level: '02'
   precision: 16
+
+  log_every_n_steps: 10
+  flush_logs_every_n_steps: 100
+
 
   on_test:
     lr: 0.0001

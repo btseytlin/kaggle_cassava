@@ -5,7 +5,8 @@ from pytorch_lightning.callbacks import EarlyStopping
 from torch.utils.data import Subset, DataLoader
 from tqdm.auto import tqdm
 from sklearn.metrics import accuracy_score, f1_score
-
+from pytorch_lightning.callbacks import LearningRateMonitor
+from pytorch_lightning.loggers import TensorBoardLogger
 from cassava.models.byol import BYOL
 from cassava.models.model import LeafDoctorModel
 from cassava.transforms import get_test_transforms
@@ -70,12 +71,18 @@ def lr_find(trainer, model, train_data_loader, val_data_loader=None, plot=False)
 
 
 def train_classifier(model, train_loader, hparams):
+    logger = TensorBoardLogger("lightning_logs", name="classifier")
+    lr_monitor = LearningRateMonitor(logging_interval='step')
     trainer = Trainer.from_argparse_args(
         hparams,
         reload_dataloaders_every_epoch=True,
         terminate_on_nan=True,
         precision=hparams.precision,
         amp_level=hparams.amp_level,
+        callbacks=[lr_monitor],
+        log_every_n_steps=hparams.log_every_n_steps,
+        flush_logs_every_n_steps=hparams.flush_logs_every_n_steps,
+        logger=logger,
     )
 
     # Model
@@ -90,20 +97,25 @@ def train_classifier(model, train_loader, hparams):
 
 
 def train_byol(model, hparams, loader):
+    logger = TensorBoardLogger("lightning_logs", name="byol")
     byol = BYOL(model, hparams=hparams)
 
     early_stopping = EarlyStopping('train_loss',
                                    mode='min',
                                    patience=hparams.early_stop_patience,
                                    verbose=True)
+    lr_monitor = LearningRateMonitor(logging_interval='step')
 
     trainer = Trainer.from_argparse_args(
         hparams,
         reload_dataloaders_every_epoch=True,
         terminate_on_nan=True,
-        callbacks=[early_stopping],
+        callbacks=[early_stopping, lr_monitor],
         precision=hparams.precision,
         amp_level=hparams.amp_level,
+        log_every_n_steps=hparams.log_every_n_steps,
+        flush_logs_every_n_steps=hparams.flush_logs_every_n_steps,
+        logger=logger,
     )
 
     if hparams.auto_lr_find:
