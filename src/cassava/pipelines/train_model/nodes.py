@@ -3,11 +3,8 @@ from argparse import Namespace
 from sklearn.model_selection import train_test_split
 import torch
 import numpy as np
-from pytorch_lightning import Trainer
-from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from torch.utils.data import Subset, DataLoader
 
-from cassava.models.model import LeafDoctorModel
 from cassava.transforms import get_train_transforms, get_test_transforms
 from cassava.utils import DatasetFromSubset
 from cassava.pipelines.predict.nodes import predict
@@ -33,13 +30,13 @@ def train_model(finetuned_model, train, parameters):
     train_loader = DataLoader(train_dataset,
                                 batch_size=parameters['classifier']['batch_size'],
                                 num_workers=parameters['data_loader_workers'],
-                                shuffle=True)
+                                shuffle=True,
+                              pin_memory=True)
 
     hparams = Namespace(**parameters['classifier'])
 
     # Train
     logging.info('Training model')
-    hparams.max_epochs = hparams.max_epochs - hparams.finetune_epochs
     model = train_classifier(finetuned_model, train_loader, hparams=hparams)
 
     # Finetune for test image size
@@ -52,10 +49,19 @@ def train_model(finetuned_model, train, parameters):
     train_loader = DataLoader(train_dataset,
                               batch_size=parameters['classifier']['batch_size'],
                               num_workers=parameters['data_loader_workers'],
-                              shuffle=True)
+                              shuffle=True,
+                              pin_memory=True)
     hparams.max_epochs = hparams.finetune_epochs
-    hparams.lr = hparams.lr/10
-    model = train_classifier(model, train_loader, hparams=hparams)
+    hparams.lr = hparams.finetune_lr
+
+    only_train_layers = [
+        lambda trunk: trunk.blocks[-1],
+        lambda trunk: trunk.conv_head,
+        lambda trunk: trunk.bn2,
+        lambda trunk: trunk.global_pool,
+        lambda trunk: trunk.classifier,
+    ]
+    model = train_classifier(model, train_loader, hparams=hparams, only_train_layers=only_train_layers)
     return model
 
 

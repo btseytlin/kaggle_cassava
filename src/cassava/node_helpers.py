@@ -30,7 +30,8 @@ def predict(model, dataset, indices, batch_size=10, num_workers=4, transform=Non
                         batch_size=batch_size,
                         num_workers=num_workers,
                         shuffle=False,
-                        drop_last=False)
+                        drop_last=False,
+                        pin_memory=True)
 
     predictions = []
     probas = []
@@ -70,7 +71,7 @@ def lr_find(trainer, model, train_data_loader, val_data_loader=None, plot=False)
     return newlr
 
 
-def train_classifier(model, train_loader, hparams):
+def train_classifier(model, train_loader, hparams, only_train_layers=None):
     logger = TensorBoardLogger("lightning_logs", name="classifier")
     lr_monitor = LearningRateMonitor(logging_interval='step')
     trainer = Trainer.from_argparse_args(
@@ -86,7 +87,7 @@ def train_classifier(model, train_loader, hparams):
     )
 
     # Model
-    new_model = LeafDoctorModel(hparams)
+    new_model = LeafDoctorModel(hparams, only_train_layers=only_train_layers)
     new_model.load_state_dict(model.state_dict())
     model = new_model
 

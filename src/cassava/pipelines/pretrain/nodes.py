@@ -22,10 +22,20 @@ def pretrain_model(train, unlabelled, parameters):
     loader = DataLoader(dataset,
                         batch_size=parameters['byol']['batch_size'],
                         num_workers=parameters['data_loader_workers'],
-                        shuffle=True)
+                        shuffle=True,
+                        pin_memory=True)
 
     classifier_params = Namespace(**parameters['classifier'])
-    model = LeafDoctorModel(classifier_params)
+
+    only_train_layers = [
+        lambda trunk: trunk.blocks[-1],
+        lambda trunk: trunk.conv_head,
+        lambda trunk: trunk.bn2,
+        lambda trunk: trunk.global_pool,
+        lambda trunk: trunk.classifier,
+    ]
+
+    model = LeafDoctorModel(classifier_params, only_train_layers=only_train_layers)
 
     hparams = Namespace(**parameters['byol'])
     byol = train_byol(model.trunk, hparams, loader)

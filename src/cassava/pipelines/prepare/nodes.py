@@ -37,7 +37,7 @@ def obtain_image_hashes(train_images_torch_2020, train_images_torch_2019, test_i
     logging.info('Obtaining hashes')
 
     for dname, ds in tqdm(datasets.items()):
-        loader = DataLoader(ds, num_workers=6, batch_size=None)
+        loader = DataLoader(ds, num_workers=6, batch_size=None, pin_memory=True)
         for ix, (image, label) in tqdm(enumerate(loader), total=len(loader), desc=dname):
             if dname in ['test_2019', 'extra_2019']:
                 label = None

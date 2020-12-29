@@ -124,7 +124,7 @@ class BYOL(pl.LightningModule):
         self.hparams = hparams or Namespace()
         self._target = None
 
-        self.encoder(torch.zeros(2, 3, *image_size))
+        self.encoder(torch.zeros(2, 3, *image_size, device=self.device))
 
     def augment(self, batch):
         if self.hparams.precision == 16:
@@ -145,7 +145,8 @@ class BYOL(pl.LightningModule):
             pt.data = self.beta * pt.data + (1 - self.beta) * p.data
 
     def configure_optimizers(self):
-        optimizer = optim.AdamW(self.parameters(), lr=self.hparams.lr, weight_decay=self.hparams.weight_decay)
+        trainable_params = list(filter(lambda p: p.requires_grad, self.parameters()))
+        optimizer = optim.AdamW(trainable_params, lr=self.hparams.lr, weight_decay=self.hparams.weight_decay)
         lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer,
                                                            max_lr=self.hparams.lr,
                                                            epochs=self.hparams.max_epochs,
@@ -173,7 +174,7 @@ class BYOL(pl.LightningModule):
             targ1, targ2 = self.target(x1), self.target(x2)
         loss = torch.mean(normalized_mse(pred1, targ2) + normalized_mse(pred2, targ1))
 
-        self.log("train_loss", loss.item(), on_step=True)
+        self.log("train_loss", float(loss.detach()), on_step=True)
         return {"loss": loss}
 
     @torch.no_grad()
@@ -189,4 +190,4 @@ class BYOL(pl.LightningModule):
     @torch.no_grad()
     def validation_epoch_end(self, outputs: List[Dict]) -> Dict:
         val_loss = sum(x["loss"] for x in outputs) / len(outputs)
-        self.log("val_loss", val_loss.item())
+        self.log("val_loss", float(val_loss.detach()))

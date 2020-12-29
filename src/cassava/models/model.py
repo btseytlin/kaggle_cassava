@@ -10,16 +10,35 @@ import torch.nn.functional as F
 from cassava.bitempered_loss import bi_tempered_logistic_loss
 
 
+def dfs_freeze(model, unfreeze=False):
+    for param in model.parameters():
+        param.requires_grad = unfreeze
+
+    for name, child in model.named_children():
+        for param in child.parameters():
+            param.requires_grad = unfreeze
+        dfs_freeze(child, unfreeze=unfreeze)
+
+
 class LeafDoctorModel(pl.LightningModule):
-    def __init__(self, hparams = None):
+    def __init__(self, hparams = None, only_train_layers=None):
         super().__init__()
         self.hparams = hparams or Namespace()
+        self.only_train_layers = only_train_layers
 
         self.trunk = timm.create_model('efficientnet_b0', pretrained=True, num_classes=5)
 
-        # for layer in [self.trunk.bn1, self.trunk.bn2]:
-        #     for param in layer.parameters():
-        #         param.requires_grad = False
+        # Freeze layers that dont require grad
+        if only_train_layers:
+            dfs_freeze(self.trunk)
+
+            for layer_name_or_getter in only_train_layers:
+                if isinstance(layer_name_or_getter, str):
+                    layer = getattr(self.trunk, layer_name_or_getter)
+
+                else:
+                    layer = layer_name_or_getter(self.trunk)
+                dfs_freeze(layer, unfreeze=True)
 
     def forward(self, x):
         return self.trunk(x)
@@ -32,7 +51,8 @@ class LeafDoctorModel(pl.LightningModule):
         return torch.max(self.forward(x), 1)[1]
 
     def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(self.parameters(),
+        trainable_params = list(filter(lambda p: p.requires_grad, self.parameters()))
+        optimizer = torch.optim.Adam(trainable_params,
                                       lr=self.hparams.lr or self.hparams.learning_rate,
                                       weight_decay=self.hparams.weight_decay)
 
