@@ -25,26 +25,11 @@ def pretrain_model(train, unlabelled, parameters):
                         shuffle=True,
                         pin_memory=True)
 
-    classifier_params = Namespace(**parameters['classifier'])
-
-    only_train_layers = [
-        lambda trunk: trunk.blocks[-1],
-        lambda trunk: trunk.conv_head,
-        lambda trunk: trunk.bn2,
-        lambda trunk: trunk.global_pool,
-        lambda trunk: trunk.act2,
-        lambda trunk: trunk.classifier,
-    ]
-
-    model = LeafDoctorModel(classifier_params, only_train_layers=only_train_layers)
-
-    hparams = Namespace(**parameters['byol'])
-    byol = train_byol(model.trunk, loader,
-                      hparams=hparams,
-                      log_training=parameters['log_training'])
-
-    state_dict = byol.encoder.model.state_dict()
-    model = LeafDoctorModel(classifier_params)
-    model.trunk.load_state_dict(state_dict)
-    return model
+    byol_params = parameters['byol']
+    model = LeafDoctorModel()
+    pretrained_model = train_byol(model, loader,
+                                  byol_parameters=byol_params,
+                                  log_training=parameters['log_training'],
+                                  logger_name='byol_train')
+    return pretrained_model
 

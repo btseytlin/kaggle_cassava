@@ -1,4 +1,6 @@
 import logging
+from argparse import Namespace
+
 import torch
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import EarlyStopping
@@ -71,8 +73,8 @@ def lr_find(trainer, model, train_data_loader, val_data_loader=None, plot=False)
     return newlr
 
 
-def train_classifier(model, train_loader, hparams, only_train_layers=None, log_training=True):
-    logger = TensorBoardLogger("lightning_logs", name="classifier") if log_training else None
+def train_classifier(model, train_loader, hparams, only_train_layers=None, log_training=True, logger_name='classifier'):
+    logger = TensorBoardLogger("lightning_logs", name=logger_name) if log_training else None
     lr_monitor = LearningRateMonitor(logging_interval='step')
     trainer = Trainer.from_argparse_args(
         hparams,
@@ -97,16 +99,28 @@ def train_classifier(model, train_loader, hparams, only_train_layers=None, log_t
     return model
 
 
-def train_byol(model, loader, hparams, log_training=True):
-    logger = TensorBoardLogger("lightning_logs", name="byol") if log_training else None
-    byol = BYOL(model, hparams=hparams)
+def train_byol(model, loader, byol_parameters, log_training=True, logger_name='byol'):
+    only_train_layers = [
+        lambda trunk: trunk.blocks[-1],
+        lambda trunk: trunk.conv_head,
+        lambda trunk: trunk.bn2,
+        lambda trunk: trunk.global_pool,
+        lambda trunk: trunk.act2,
+        lambda trunk: trunk.classifier,
+    ]
+    new_model = LeafDoctorModel(only_train_layers=only_train_layers)
+    new_model.load_state_dict(model.state_dict())
+    model = new_model
 
+    hparams = Namespace(**byol_parameters)
+
+    logger = TensorBoardLogger("lightning_logs", name=logger_name) if log_training else None
+    byol = BYOL(model.trunk, hparams=hparams)
     early_stopping = EarlyStopping('train_loss',
                                    mode='min',
                                    patience=hparams.early_stop_patience,
                                    verbose=True)
     lr_monitor = LearningRateMonitor(logging_interval='step')
-
     trainer = Trainer.from_argparse_args(
         hparams,
         reload_dataloaders_every_epoch=True,
@@ -125,4 +139,7 @@ def train_byol(model, loader, hparams, log_training=True):
         byol.hparams.lr = new_lr
 
     trainer.fit(byol, loader, loader)
-    return byol
+
+    pretrained_model = LeafDoctorModel(None)
+    pretrained_model.trunk.load_state_dict(byol.encoder.model.state_dict())
+    return pretrained_model

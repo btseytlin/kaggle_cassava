@@ -21,7 +21,7 @@ def split_data(train, parameters):
     return train_indices, val_indices
 
 
-def train_model(finetuned_model, train, parameters):
+def train_model(pretrained_model, train, parameters):
     train_transform = get_train_transforms(parameters['classifier']['train_width'], parameters['classifier']['train_height'])
 
     train_dataset = DatasetFromSubset(Subset(train, indices=list(range(len(train)))),
@@ -37,33 +37,7 @@ def train_model(finetuned_model, train, parameters):
 
     # Train
     logging.info('Training model')
-    model = train_classifier(finetuned_model, train_loader, hparams=hparams)
-
-    # Finetune for test image size
-    hparams = Namespace(**parameters['classifier'])
-    logging.info('Finetuning model for test image size')
-    train_transform = get_train_transforms(parameters['classifier']['test_width'],
-                                           parameters['classifier']['test_height'])
-    train_dataset = DatasetFromSubset(Subset(train, indices=list(range(len(train)))),
-                                      transform=train_transform)
-    train_loader = DataLoader(train_dataset,
-                              batch_size=parameters['classifier']['batch_size'],
-                              num_workers=parameters['data_loader_workers'],
-                              shuffle=True,
-                              pin_memory=True)
-    hparams.max_epochs = hparams.finetune_epochs
-    hparams.lr = hparams.finetune_lr
-
-    only_train_layers = [
-        lambda trunk: trunk.blocks[-1],
-        lambda trunk: trunk.conv_head,
-        lambda trunk: trunk.bn2,
-        lambda trunk: trunk.global_pool,
-        lambda trunk: trunk.act2,
-        lambda trunk: trunk.classifier,
-    ]
-    model = train_classifier(model, train_loader, hparams=hparams, only_train_layers=only_train_layers,
-                             log_training=parameters['log_training'])
+    model = train_classifier(pretrained_model, train_loader, hparams=hparams)
     return model
 
 

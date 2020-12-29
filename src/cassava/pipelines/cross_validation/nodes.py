@@ -7,7 +7,7 @@ import os
 import torch
 from sklearn.model_selection import StratifiedKFold
 
-from cassava.pipelines.finetune.nodes import finetune_on_test
+from cassava.pipelines.finetune.nodes import finetune_byol_test, finetune_classifier_resolution
 from cassava.pipelines.pretrain.nodes import pretrain_model
 from cassava.pipelines.train_model.nodes import train_model, score_model
 
@@ -65,6 +65,13 @@ def cross_validation(train, unlabelled, cv_splits, parameters):
         logging.info('Training on train')
         model = train_model(pretrained_model, fold_train_dataset, fold_parameters)
 
+        logging.info('Finetuning with BYOL')
+        model = finetune_byol_test(model, fold_train_dataset, fold_test_dataset, fold_parameters)
+
+        logging.info('Finetuning for test resolution')
+        model = finetune_classifier_resolution(model, fold_train_dataset, fold_parameters)
+
+        logging.info('Done training CV fold')
         torch.save(model.state_dict(), model_path)
 
         # Score on test

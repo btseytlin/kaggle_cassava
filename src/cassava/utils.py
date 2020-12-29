@@ -149,6 +149,12 @@ class DatasetFromSubset(Dataset):
         self.transform = transform
         self.target_transform = target_transform
 
+    def __getattr__(self, item):
+        if item in self.__dict__:
+            return getattr(self, item)
+
+        return getattr(self.subset.dataset, item)[self.subset.indices]
+
     def __getitem__(self, index):
         x, y = self.subset[index]
         if self.transform:
