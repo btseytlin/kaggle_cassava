@@ -61,7 +61,8 @@ def train_model(finetuned_model, train, parameters):
         lambda trunk: trunk.global_pool,
         lambda trunk: trunk.classifier,
     ]
-    model = train_classifier(model, train_loader, hparams=hparams, only_train_layers=only_train_layers)
+    model = train_classifier(model, train_loader, hparams=hparams, only_train_layers=only_train_layers,
+                             log_training=parameters['log_training'])
     return model
 
 

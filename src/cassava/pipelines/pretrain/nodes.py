@@ -38,7 +38,9 @@ def pretrain_model(train, unlabelled, parameters):
     model = LeafDoctorModel(classifier_params, only_train_layers=only_train_layers)
 
     hparams = Namespace(**parameters['byol'])
-    byol = train_byol(model.trunk, hparams, loader)
+    byol = train_byol(model.trunk, loader,
+                      hparams=hparams,
+                      log_training=parameters['log_training'])
 
     state_dict = byol.encoder.model.state_dict()
     model = LeafDoctorModel(classifier_params)

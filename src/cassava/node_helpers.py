@@ -71,8 +71,8 @@ def lr_find(trainer, model, train_data_loader, val_data_loader=None, plot=False)
     return newlr
 
 
-def train_classifier(model, train_loader, hparams, only_train_layers=None):
-    logger = TensorBoardLogger("lightning_logs", name="classifier")
+def train_classifier(model, train_loader, hparams, only_train_layers=None, log_training=True):
+    logger = TensorBoardLogger("lightning_logs", name="classifier") if log_training else None
     lr_monitor = LearningRateMonitor(logging_interval='step')
     trainer = Trainer.from_argparse_args(
         hparams,
@@ -97,8 +97,8 @@ def train_classifier(model, train_loader, hparams, only_train_layers=None):
     return model
 
 
-def train_byol(model, hparams, loader):
-    logger = TensorBoardLogger("lightning_logs", name="byol")
+def train_byol(model, loader, hparams, log_training=True):
+    logger = TensorBoardLogger("lightning_logs", name="byol") if log_training else None
     byol = BYOL(model, hparams=hparams)
 
     early_stopping = EarlyStopping('train_loss',
