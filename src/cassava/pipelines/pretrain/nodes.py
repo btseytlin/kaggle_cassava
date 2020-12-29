@@ -32,6 +32,7 @@ def pretrain_model(train, unlabelled, parameters):
         lambda trunk: trunk.conv_head,
         lambda trunk: trunk.bn2,
         lambda trunk: trunk.global_pool,
+        lambda trunk: trunk.act2,
         lambda trunk: trunk.classifier,
     ]
 
