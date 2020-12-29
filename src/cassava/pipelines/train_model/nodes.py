@@ -54,6 +54,7 @@ def train_model(finetuned_model, train, parameters):
                               num_workers=parameters['data_loader_workers'],
                               shuffle=True)
     hparams.max_epochs = hparams.finetune_epochs
+    hparams.lr = hparams.lr/10
     model = train_classifier(model, train_loader, hparams=hparams)
     return model
 

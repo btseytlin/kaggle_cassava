@@ -146,16 +146,22 @@ class BYOL(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer = optim.AdamW(self.parameters(), lr=self.hparams.lr, weight_decay=self.hparams.weight_decay)
-        lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
-                                                                  patience=self.hparams.reduce_lr_on_pleteau_patience,
-                                                                  verbose=True)
-        return {
-            'optimizer': optimizer,
-            'lr_scheduler': lr_scheduler,
-            'monitor': 'train_loss',
-            'interval': 'epoch',
-            'frequency': 1
-        }
+        lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer,
+                                                           max_lr=self.hparams.lr,
+                                                           epochs=self.hparams.max_epochs,
+                                                           steps_per_epoch=self.hparams.limit_train_batches)
+        return (
+            [optimizer],
+            [
+                {
+                    'scheduler': lr_scheduler,
+                    'interval': 'step',
+                    'frequency': 1,
+                    'reduce_on_plateau': False,
+                    'monitor': 'val_loss',
+                }
+            ]
+        )
 
     def training_step(self, batch, *_) -> Dict[str, Union[Tensor, Dict]]:
         x = batch[0]
