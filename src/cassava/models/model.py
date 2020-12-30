@@ -52,7 +52,7 @@ class LeafDoctorModel(pl.LightningModule):
 
     def configure_optimizers(self):
         trainable_params = list(filter(lambda p: p.requires_grad, self.parameters()))
-        optimizer = torch.optim.Adam(trainable_params,
+        optimizer = torch.optim.AdamW(trainable_params,
                                       lr=self.hparams.lr or self.hparams.learning_rate,
                                       weight_decay=self.hparams.weight_decay)
 

@@ -82,7 +82,7 @@ def train_classifier(model, train_loader, hparams, only_train_layers=None, log_t
         terminate_on_nan=True,
         precision=hparams.precision,
         amp_level=hparams.amp_level,
-        callbacks=[lr_monitor],
+        callbacks=[lr_monitor] if log_training else None,
         log_every_n_steps=hparams.log_every_n_steps,
         flush_logs_every_n_steps=hparams.flush_logs_every_n_steps,
         logger=logger,
@@ -120,12 +120,15 @@ def train_byol(model, loader, byol_parameters, log_training=True, logger_name='b
                                    mode='min',
                                    patience=hparams.early_stop_patience,
                                    verbose=True)
-    lr_monitor = LearningRateMonitor(logging_interval='step')
+    callbacks = [early_stopping]
+    if log_training:
+        lr_monitor = LearningRateMonitor(logging_interval='step')
+        callbacks.append(lr_monitor)
     trainer = Trainer.from_argparse_args(
         hparams,
         reload_dataloaders_every_epoch=True,
         terminate_on_nan=True,
-        callbacks=[early_stopping, lr_monitor],
+        callbacks=callbacks,
         precision=hparams.precision,
         amp_level=hparams.amp_level,
         log_every_n_steps=hparams.log_every_n_steps,
