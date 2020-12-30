@@ -12,17 +12,21 @@ def data_preapre_transform(image):
         image = image.rotate(90, expand=True)
 
     # Center crop until 8:6
-    width, height = image.size   # Get dimensions
-
-    if round(width/height, 3) != round(8/6, 3):
-        new_height = int(height*(width/height * 6/8))
+    width, height = image.size  # Get dimensions
+    if round(width / height, 3) != round(8 / 6, 3):
+        new_height = int(height * (width / height * 6 / 8))
         new_width = width
 
-        left = (width - new_width)/2
-        top = (height - new_height)/2
-        right = (width + new_width)/2
-        bottom = (height + new_height)/2
+        if new_height > height:
+            new_height = height
+            new_width = int(width * 8 / 6 * height / width)
 
+        left = abs(new_width - width) / 2
+        top = abs(new_height - height) / 2
+        right = (width + new_width) / 2
+        bottom = (new_height + height) / 2
+
+        assert (np.array([left, top, right, bottom]) >= 0).all()
         image = image.crop((left, top, right, bottom))
     return image
 
@@ -53,15 +57,16 @@ def get_prepare_transforms(width, height):
 
 def get_train_transforms(width, height):
     train_transforms = A.Compose([
+        A.RandomResizedCrop(width, height, scale=(0.1, 0.8)),
         A.JpegCompression(quality_lower=95, quality_upper=100, p=0.5),
         A.ColorJitter(p=0.5),
         A.ToFloat(max_value=1.0),
         A.ShiftScaleRotate(p=0.5),
-        A.RandomResizedCrop(width, height, scale=(0.1, 0.8)),
         A.HorizontalFlip(p=0.5),
         A.VerticalFlip(p=0.5),
         A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         A.CoarseDropout(p=0.5),
+        A.Cutout(p=0.5),
         ToTensorV2(),
     ])
 
