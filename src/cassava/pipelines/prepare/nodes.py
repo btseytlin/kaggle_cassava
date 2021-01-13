@@ -8,7 +8,7 @@ import torch
 from torch.utils.data import DataLoader, Subset, ConcatDataset
 
 from cassava.transforms import data_preapre_transform, get_prepare_transforms
-from cassava.utils import DatasetFromSubset, CassavaDataset
+from cassava.utils import DatasetFromSubset, CassavaDataset, make_image_folder
 from PIL import Image
 import imagehash
 
@@ -133,23 +133,7 @@ def prepare_dataset(train_images_torch_2020, train_images_torch_2019, test_image
             os.path.exists(unlabelled_path)]):
         raise Exception('Dataset folders already exist, delete manually to overwrite.')
 
-    os.makedirs(train_path, exist_ok=True)
-    os.makedirs(unlabelled_path, exist_ok=True)
-
-    def make_image_folder(dataset, sources, path, csv_path):
-        loader = DataLoader(dataset, batch_size=None, num_workers=6, collate_fn=lambda x: x)
-        rows = []
-        for ix, (image, label) in enumerate(tqdm(loader)):
-            image_id = f'{ix}.jpg'
-            source = sources[ix]
-            img_path = os.path.join(path, image_id)
-            imsave(img_path, image)
-            rows.append((image_id, label, source))
-
-        df = pd.DataFrame(rows, columns=['image_id', 'label', 'source'])
-        df.to_csv(csv_path, index=False)
-        return df
-
     train_df = make_image_folder(train_dataset, train_sources, train_path, train_csv_path)
     unlabelled_df = make_image_folder(unlabelled_dataset, unlabelled_sources, unlabelled_path, unlabelled_csv_path)
-    return CassavaDataset(train_path, train_df.image_id, train_df.label), CassavaDataset(unlabelled_path, unlabelled_df.image_id, unlabelled_df.label)
+    return CassavaDataset(train_path, train_df.image_id, train_df.label, sources=train_sources), \
+           CassavaDataset(unlabelled_path, unlabelled_df.image_id, unlabelled_df.label, sources=unlabelled_sources)

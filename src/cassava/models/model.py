@@ -26,7 +26,7 @@ class LeafDoctorModel(pl.LightningModule):
         self.hparams = hparams or Namespace()
         self.only_train_layers = only_train_layers
 
-        self.trunk = timm.create_model('efficientnet_b0', pretrained=True, num_classes=5)
+        self.trunk = timm.create_model('efficientnet_b3', pretrained=True, num_classes=5)
 
         # Freeze layers that dont require grad
         if only_train_layers:

@@ -2,10 +2,10 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import os
-
+from tqdm.auto import tqdm
 from PIL import Image
 from skimage import io
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 import torch
 from matplotlib import pyplot as plt
 from mpl_toolkits.axes_grid1 import ImageGrid
@@ -176,10 +176,10 @@ class CassavaDataset(Dataset):
     def __init__(self, root, image_ids, labels, sources=None, transform=None):
         super().__init__()
         self.root = root
-        self.image_ids = image_ids
-        self.labels = labels
+        self.image_ids = np.array(image_ids)
+        self.labels = np.array(labels)
         self.targets = self.labels
-        self.sources = sources
+        self.sources = np.array(sources) if sources is not None else None
         self.transform = transform
 
     def __len__(self):
@@ -193,3 +193,20 @@ class CassavaDataset(Dataset):
             img = self.transform(img)
 
         return img, label
+
+
+def make_image_folder(dataset, sources, path, csv_path):
+    os.makedirs(path, exist_ok=True)
+
+    loader = DataLoader(dataset, batch_size=None, num_workers=6, collate_fn=lambda x: x)
+    rows = []
+    for ix, (image, label) in enumerate(tqdm(loader)):
+        image_id = f'{ix}.jpg'
+        source = sources[ix]
+        img_path = os.path.join(path, image_id)
+        io.imsave(img_path, image)
+        rows.append((image_id, label, source))
+
+    df = pd.DataFrame(rows, columns=['image_id', 'label', 'source'])
+    df.to_csv(csv_path, index=False)
+    return df

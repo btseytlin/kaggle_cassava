@@ -146,3 +146,4 @@ def train_byol(model, loader, byol_parameters, log_training=True, logger_name='b
     pretrained_model = LeafDoctorModel(None)
     pretrained_model.trunk.load_state_dict(byol.encoder.model.state_dict())
     return pretrained_model
+

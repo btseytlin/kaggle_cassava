@@ -69,6 +69,12 @@ unlabelled:
   labels_path: unlabelled.csv
   images_path: unlabelled
 
+test:
+  type: cassava.extras.datasets.image_dataset.ImageOneFolderDataSet
+  filepath: data/03_primary
+  labels_path: test.csv
+  images_path: test
+
 # Models
 
 pretrained_model:
